@@ -1,34 +1,49 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { MasterDatabaseService } from './master-database.service';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { fileUpload } from '../../helpers/fileUploder';
+import AuthGuard from '../../middlewares/auth.guard';
 import { CreateMasterDatabaseDto } from './dto/create-master-database.dto';
-import { UpdateMasterDatabaseDto } from './dto/update-master-database.dto';
+import { MasterDatabaseService } from './master-database.service';
 
+@ApiTags('master-database')
 @Controller('master-database')
 export class MasterDatabaseController {
   constructor(private readonly masterDatabaseService: MasterDatabaseService) {}
 
   @Post()
-  create(@Body() createMasterDatabaseDto: CreateMasterDatabaseDto) {
-    return this.masterDatabaseService.create(createMasterDatabaseDto);
-  }
+  @ApiOperation({ summary: 'Create master database' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
+  @HttpCode(HttpStatus.CREATED)
+  async createMasterDatabase(
+    @Body() createMasterDatabaseDto: CreateMasterDatabaseDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    const result = await this.masterDatabaseService.createMasterDatabase(
+      createMasterDatabaseDto,
+      file,
+    );
 
-  @Get()
-  findAll() {
-    return this.masterDatabaseService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.masterDatabaseService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMasterDatabaseDto: UpdateMasterDatabaseDto) {
-    return this.masterDatabaseService.update(+id, updateMasterDatabaseDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.masterDatabaseService.remove(+id);
+    return {
+      message: 'Master database created successfully',
+      data: result,
+    };
   }
 }
