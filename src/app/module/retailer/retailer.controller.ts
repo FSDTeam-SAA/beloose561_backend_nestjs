@@ -1,34 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { RetailerService } from './retailer.service';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import type { Request } from 'express';
+import AuthGuard from '../../middlewares/auth.guard';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
-import { UpdateRetailerDto } from './dto/update-retailer.dto';
+import { RetailerService } from './retailer.service';
 
 @Controller('retailer')
 export class RetailerController {
   constructor(private readonly retailerService: RetailerService) {}
 
   @Post()
-  create(@Body() createRetailerDto: CreateRetailerDto) {
-    return this.retailerService.create(createRetailerDto);
-  }
+  @ApiOperation({ summary: 'Create retailer' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async createRetailer(
+    @Req() req: Request,
+    @Body() createRetailerDto: CreateRetailerDto,
+  ) {
+    const result = await this.retailerService.createRetailer(
+      req.user!.id,
+      createRetailerDto,
+    );
 
-  @Get()
-  findAll() {
-    return this.retailerService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.retailerService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRetailerDto: UpdateRetailerDto) {
-    return this.retailerService.update(+id, updateRetailerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.retailerService.remove(+id);
+    return {
+      message: 'Retailer created successfully',
+      data: result,
+    };
   }
 }

@@ -12,6 +12,10 @@ import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { PaymentModule } from './app/module/payment/payment.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { RetailerModule } from './app/module/retailer/retailer.module';
+import { HumidorModule } from './app/module/humidor/humidor.module';
+import { ShelfModule } from './app/module/shelf/shelf.module';
+import { InventoryModule } from './app/module/inventory/inventory.module';
+import { QrcodesModule } from './app/module/qrcodes/qrcodes.module';
 
 @Module({
   imports: [
@@ -25,6 +29,10 @@ import { RetailerModule } from './app/module/retailer/retailer.module';
     PaymentModule,
     WebhookModule,
     RetailerModule,
+    HumidorModule,
+    ShelfModule,
+    InventoryModule,
+    QrcodesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
