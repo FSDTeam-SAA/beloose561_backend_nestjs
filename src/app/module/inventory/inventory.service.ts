@@ -1,12 +1,15 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import { fileUpload } from '../../helpers/fileUploder';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
 import { Humidor, HumidorDocument } from '../humidor/entities/humidor.entity';
-import { MasterDatabase } from '../master-database/entities/master-database.entity';
+import {
+  MasterDatabase,
+  MasterDatabaseDocument,
+} from '../master-database/entities/master-database.entity';
 import {
   Retailer,
   RetailerDocument,
@@ -26,16 +29,49 @@ export class InventoryService {
     @InjectModel(Retailer.name)
     private readonly retailerModel: Model<RetailerDocument>,
     @InjectModel(MasterDatabase.name)
-    private readonly masterDatabaseModel: Model<MasterDatabase>,
+    private readonly masterDatabaseModel: Model<MasterDatabaseDocument>,
     @InjectModel(Humidor.name)
     private readonly humidorModel: Model<HumidorDocument>,
   ) {}
 
-  private resolveStatus(quantity: number, masterStatus?: string, currentStatus?: string) {
-    if (currentStatus === 'under_review' || masterStatus !== 'approved') {
+  private resolveStatus(
+    quantity: number,
+    masterStatus?: string,
+    currentStatus?: string,
+  ) {
+    if (currentStatus === 'under_review') return 'under_review';
+    if (masterStatus !== undefined && masterStatus !== 'approved') {
       return 'under_review';
     }
     return quantity <= 0 ? 'out_of_stock' : 'active';
+  }
+
+  private async findOrCreateMasterDatabase(
+    customName: string,
+    customBrand: string,
+    customStrength: string,
+    customWrapper: string,
+    customSize: string,
+    customImage: string | undefined,
+    customDescription: string,
+    retailerId: Types.ObjectId,
+  ) {
+    const existing = await this.masterDatabaseModel.findOne({
+      name: new RegExp(`^${customName.trim()}$`, 'i'),
+    });
+    if (existing) return existing;
+
+    return this.masterDatabaseModel.create({
+      name: customName,
+      brand: customBrand,
+      strength: customStrength,
+      wrapper: customWrapper,
+      size: customSize,
+      image: customImage,
+      description: customDescription,
+      status: 'pending',
+      submittedByRetailer: retailerId,
+    });
   }
 
   private async getRetailerByUserId(userId: string) {
@@ -70,9 +106,8 @@ export class InventoryService {
       .limit(limit)
       .lean();
 
-    const total = await this.inventoryRepository.countDocuments(
-      whereConditions,
-    );
+    const total =
+      await this.inventoryRepository.countDocuments(whereConditions);
 
     return {
       meta: { page, limit, total },
@@ -114,11 +149,12 @@ export class InventoryService {
       ...rest
     } = createInventoryDto;
 
-    let masterDatabase;
+    let masterDatabase: MasterDatabaseDocument | null;
 
     if (masterCigarId) {
       masterDatabase = await this.masterDatabaseModel.findById(masterCigarId);
-      if (!masterDatabase) throw new HttpException('Master cigar not found', 404);
+      if (!masterDatabase)
+        throw new HttpException('Master cigar not found', 404);
     } else {
       let uploadedImage = customImage;
       if (file) {
@@ -126,26 +162,17 @@ export class InventoryService {
         uploadedImage = uploadedFile.url;
       }
 
-      masterDatabase = await this.masterDatabaseModel.findOne({
-        name: new RegExp(`^${customName!.trim()}$`, 'i'),
-      });
-
-      if (!masterDatabase) {
-        masterDatabase = await this.masterDatabaseModel.create({
-          name: customName,
-          brand: customBrand,
-          strength: customStrength,
-          wrapper: customWrapper,
-          size: customSize,
-          image: uploadedImage,
-          description: customDescription,
-          status: 'pending',
-          submittedByRetailer: retailer._id,
-        });
-      }
+      masterDatabase = await this.findOrCreateMasterDatabase(
+        customName!,
+        customBrand!,
+        customStrength!,
+        customWrapper!,
+        customSize!,
+        uploadedImage,
+        customDescription!,
+        retailer._id,
+      );
     }
-
-    const isApproved = masterDatabase.status === 'approved';
 
     const result = await this.inventoryRepository.create({
       ...rest,
@@ -191,8 +218,7 @@ export class InventoryService {
       if (!humidor) throw new HttpException('Humidor not found', 404);
 
       const shelf = humidor.shelfes.find(
-        (item) =>
-          item.name.toLowerCase() === shelfName.trim().toLowerCase(),
+        (item) => item.name.toLowerCase() === shelfName.trim().toLowerCase(),
       );
       if (!shelf) throw new HttpException('Shelf not found', 404);
     }
