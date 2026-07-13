@@ -114,8 +114,6 @@ export class MasterDatabaseController {
 
   @Get('/master-database/:id')
   @ApiOperation({ summary: 'Get master database by id' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
   async getMasterDatabase(@Param('id') id: string) {
     const result = await this.masterDatabaseService.getMasterDatabaseById(id);
