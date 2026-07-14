@@ -53,6 +53,7 @@ export class InventoryService {
       userId: user._id,
       retailerId: retailer._id,
       humidorId: humidor._id,
+      status: 'under_review',
     });
     return inventory;
   }
@@ -138,6 +139,17 @@ export class InventoryService {
     const inventory = await this.inventoryRepository.findById(id);
     if (!inventory) throw new HttpException('Inventory not found', 404);
     const result = await this.inventoryRepository.findByIdAndDelete(id);
+    return result;
+  }
+
+  async adminUpdateStatus(id: string, status: string) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true },
+    );
     return result;
   }
 }

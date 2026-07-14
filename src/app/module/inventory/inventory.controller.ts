@@ -154,4 +154,18 @@ export class InventoryController {
       data: result,
     };
   }
+
+  @Put(':id/status')
+  @ApiOperation({ summary: 'Update inventory status admin' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async adminUpdateStatus(@Param('id') id: string, @Body() status: string) {
+    const result = await this.inventoryService.adminUpdateStatus(id, status);
+
+    return {
+      message: 'Inventory status updated successfully',
+      data: result,
+    };
+  }
 }
