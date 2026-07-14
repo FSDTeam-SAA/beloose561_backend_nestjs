@@ -17,7 +17,7 @@ export class Inventory {
     ref: 'Retailer',
     required: true,
   })
-  storeId!: mongoose.Types.ObjectId;
+  retailerId!: mongoose.Types.ObjectId;
 
   // Master DB-তে থাকলে এটা থাকবে
   @Prop({
@@ -29,25 +29,25 @@ export class Inventory {
   // Master DB-তে না থাকলে
   // নিজে দেবে (Under Review)
   @Prop()
-  customName!: string;
+  name!: string;
 
   @Prop()
-  customBrand!: string;
+  brand!: string;
 
   @Prop()
-  customStrength!: string;
+  strength!: string;
 
   @Prop()
-  customWrapper!: string;
+  wrapper!: string;
 
   @Prop()
-  customSize!: string;
+  size!: string;
 
   @Prop()
-  customImage!: string;
+  image!: string;
 
   @Prop()
-  customDescription!: string;
+  description!: string;
 
   // Location
   @Prop({

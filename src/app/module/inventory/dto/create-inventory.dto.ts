@@ -32,23 +32,12 @@ const ToBoolean = () =>
 
 export class CreateInventoryDto {
   @ApiPropertyOptional({
-    description:
-      'Id of an existing, matched MasterDatabase entry (from the name-suggestion search). When provided, its data is used directly and the custom* fields below are ignored.',
-  })
-  @IsOptional()
-  @EmptyToUndefined()
-  @IsMongoId()
-  masterCigarId?: string;
-
-  @ApiPropertyOptional({
     example: 'Padron 1964 Natural Toro',
-    description:
-      'Required only when masterCigarId is not provided (no match was selected from the suggestions).',
   })
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customName?: string;
+  name?: string;
 
   @ApiPropertyOptional({
     example: 'Padron',
@@ -56,7 +45,7 @@ export class CreateInventoryDto {
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customBrand?: string;
+  brand?: string;
 
   @ApiPropertyOptional({
     enum: CustomCigarStrength,
@@ -65,31 +54,31 @@ export class CreateInventoryDto {
   @IsOptional()
   @EmptyToUndefined()
   @IsEnum(CustomCigarStrength)
-  customStrength?: CustomCigarStrength;
+  strength?: CustomCigarStrength;
 
   @ApiPropertyOptional({ example: 'Natural Colorado' })
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customWrapper?: string;
+  wrapper?: string;
 
   @ApiPropertyOptional({ example: 'Toro' })
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customSize?: string;
+  size?: string;
 
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customImage?: string;
+  image?: string;
 
   @ApiPropertyOptional({ example: 'A premium handmade Nicaraguan cigar.' })
   @IsOptional()
   @EmptyToUndefined()
   @IsString()
-  customDescription?: string;
+  description?: string;
 
   @ApiPropertyOptional({
     description: 'Humidor id where this inventory is stored',

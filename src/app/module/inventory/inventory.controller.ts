@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -25,7 +26,6 @@ import { fileUpload } from '../../helpers/fileUploder';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { ReceiveShipmentDto } from './dto/receive-shipment.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { InventoryService } from './inventory.service';
 
@@ -39,7 +39,21 @@ export class InventoryController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
-  @ApiQuery({ name: 'humidorId', type: 'string', required: false })
+  @ApiQuery({ name: 'name', type: 'string', required: false })
+  @ApiQuery({ name: 'brand', type: 'string', required: false })
+  @ApiQuery({ name: 'productLine', type: 'string', required: false })
+  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
+  @ApiQuery({ name: 'country', type: 'string', required: false })
+  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
+  @ApiQuery({ name: 'binder', type: 'string', required: false })
+  @ApiQuery({ name: 'filler', type: 'string', required: false })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'size', type: 'string', required: false })
+  @ApiQuery({ name: 'length', type: 'string', required: false })
+  @ApiQuery({ name: 'flavorNotes', type: 'string', required: false })
+  @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
+  @ApiQuery({ name: 'description', type: 'string', required: false })
+  @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
   @ApiQuery({ name: 'status', type: 'string', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
@@ -47,7 +61,25 @@ export class InventoryController {
   @ApiQuery({ name: 'sortOrder', type: 'string', required: false })
   @HttpCode(HttpStatus.OK)
   async getAllInventory(@Req() req: Request) {
-    const filters = pick(req.query, ['searchTerm', 'humidorId', 'status']);
+    const filters = pick(req.query, [
+      'searchTerm',
+      'name',
+      'brand',
+      'productLine',
+      'manufacturer',
+      'country',
+      'wrapper',
+      'binder',
+      'filler',
+      'strength',
+      'size',
+      'length',
+      'flavorNotes',
+      'smokingTime',
+      'description',
+      'whyYoullLikeThis',
+      'status',
+    ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.inventoryService.getAllInventory(
       req.user!.id,
@@ -67,51 +99,59 @@ export class InventoryController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
-  @UseInterceptors(FileInterceptor('customImage', fileUpload.uploadConfig))
+  @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.CREATED)
   async createInventory(
     @Req() req: Request,
     @Body() createInventoryDto: CreateInventoryDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.inventoryService.createInventory(
+    const result = await this.inventoryService.createInventory(
       req.user!.id,
       createInventoryDto,
       file,
     );
+
+    return {
+      message: 'Inventory created successfully',
+      data: result,
+    };
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Edit inventory item' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
+  @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.OK)
   async updateInventory(
-    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateInventoryDto: UpdateInventoryDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.inventoryService.updateInventory(
-      req.user!.id,
+    const result = await this.inventoryService.updateInventory(
       id,
       updateInventoryDto,
+      file,
     );
+
+    return {
+      message: 'Inventory updated successfully',
+      data: result,
+    };
   }
 
-  @Post(':id/receive-shipment')
-  @ApiOperation({ summary: 'Receive shipment and increase inventory quantity' })
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete inventory item' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async receiveShipment(
-    @Req() req: Request,
-    @Param('id') id: string,
-    @Body() receiveShipmentDto: ReceiveShipmentDto,
-  ) {
-    return this.inventoryService.receiveShipment(
-      req.user!.id,
-      id,
-      receiveShipmentDto,
-    );
+  async deleteInventory(@Param('id') id: string) {
+    const result = await this.inventoryService.deleteInventory(id);
+
+    return {
+      message: 'Inventory deleted successfully',
+      data: result,
+    };
   }
 }
