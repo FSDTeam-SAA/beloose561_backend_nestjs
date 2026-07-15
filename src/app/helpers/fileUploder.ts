@@ -66,8 +66,43 @@ const deleteFromCloudinary = async (public_id: string): Promise<void> => {
   }
 };
 
+const uploadBufferToCloudinary = async (
+  buffer: Buffer,
+  folder = config.cloudinary.folder,
+): Promise<{ url: string; public_id: string }> => {
+  if (
+    !config.cloudinary.name ||
+    !config.cloudinary.apiKey ||
+    !config.cloudinary.apiSecret
+  ) {
+    throw new HttpException('Cloudinary is not configured', 500);
+  }
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: 'image',
+      },
+      (error, result) => {
+        if (error) return reject(error);
+
+        if (!result) {
+          return reject(new Error('Upload failed - no result returned'));
+        }
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      },
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+};
+
 export const fileUpload = {
   uploadToCloudinary,
+  uploadBufferToCloudinary,
   deleteFromCloudinary,
   uploadConfig,
 };

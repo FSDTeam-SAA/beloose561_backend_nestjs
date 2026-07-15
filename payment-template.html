@@ -611,14 +611,19 @@
           <div class="config-body" id="configBody">
             <div class="field">
               <label>Stripe Publishable Key</label>
-              <input id="pubKey" type="text" placeholder="pk_test_..." />
+              <input
+                id="pubKey"
+                type="text"
+                placeholder="pk_test_..."
+                value="pk_test_51Trqx7CbfjVU7bSPHahYvfm8QoggksuWZu12Bl2EMCH2pJ3ZNq3skL1qPXwhJIpEyMYsIMQFhQrLKoiP8nOoZeMm00jloLzdoC"
+              />
             </div>
             <div class="field">
               <label>Backend URL</label>
               <input
                 id="baseUrl"
                 type="text"
-                value="http://localhost:3000/api/v1"
+                value="http://localhost:8080/api/v1"
               />
             </div>
             <div class="field">
@@ -789,6 +794,12 @@
         if (toggle && body) {
           toggle.classList.add('open');
           body.classList.add('open');
+        }
+
+        const pubKeyInput = document.getElementById('pubKey');
+        const k = pubKeyInput?.value.trim();
+        if (k && k.startsWith('pk_')) {
+          initStripe(k);
         }
       });
 

@@ -12,14 +12,17 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn'],
+    logger:
+      config.env === 'production'
+        ? ['error', 'warn']
+        : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
 
   app.use(cookieParser());
   app.enableCors({
-    origin: config.corsOrigin === '*' ? true : config.corsOrigin,
+    origin: '*',
     credentials: true,
   });
 

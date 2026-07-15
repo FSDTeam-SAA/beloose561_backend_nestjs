@@ -1,6 +1,11 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import {
+  buildStoreQrTarget,
+  generateAndUploadQrCode,
+} from '../../helpers/qrcodeGenerator';
+import { Qrcode, QrcodeDocument } from '../qrcodes/entities/qrcode.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
 import { Retailer, RetailerDocument } from './entities/retailer.entity';
@@ -11,6 +16,9 @@ export class RetailerService {
     @InjectModel(Retailer.name) private retailerModel: Model<RetailerDocument>,
 
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+
+    @InjectModel(Qrcode.name)
+    private readonly qrCodeModel: Model<QrcodeDocument>,
   ) {}
 
   async createRetailer(userId: string, createRetailerDto: CreateRetailerDto) {
@@ -24,6 +32,19 @@ export class RetailerService {
       userId: user._id,
       storeSlug: slage,
     });
+
+    const storeUrl = buildStoreQrTarget(retailer.storeSlug);
+    const { url: qrCodeUrl } = await generateAndUploadQrCode(storeUrl);
+
+    retailer.qrCodeUrl = qrCodeUrl;
+    await retailer.save();
+
+    await this.qrCodeModel.create({
+      userId: user._id,
+      retailerId: retailer._id,
+      qrcodeUrl: qrCodeUrl,
+    });
+
     return retailer;
   }
 }

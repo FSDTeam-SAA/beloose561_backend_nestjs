@@ -1,26 +1,59 @@
-import { Injectable } from '@nestjs/common';
-import { CreateQrcodeDto } from './dto/create-qrcode.dto';
-import { UpdateQrcodeDto } from './dto/update-qrcode.dto';
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  buildStoreQrTarget,
+  generateAndUploadQrCode,
+} from '../../helpers/qrcodeGenerator';
+import {
+  Retailer,
+  RetailerDocument,
+} from '../retailer/entities/retailer.entity';
+import { Qrcode, QrcodeDocument } from './entities/qrcode.entity';
 
 @Injectable()
 export class QrcodesService {
-  create(createQrcodeDto: CreateQrcodeDto) {
-    return 'This action adds a new qrcode';
+  constructor(
+    @InjectModel(Qrcode.name)
+    private readonly qrCodeModel: Model<QrcodeDocument>,
+
+    @InjectModel(Retailer.name)
+    private readonly retailerModel: Model<RetailerDocument>,
+  ) {}
+
+  async getAllQrcodes() {
+    return this.qrCodeModel
+      .find()
+      .populate('userId', 'fullName email')
+      .populate('retailerId', 'storeName storeSlug')
+      .sort({ createdAt: -1 });
   }
 
-  findAll() {
-    return `This action returns all qrcodes`;
+  async getMyQrcode(userId: string) {
+    const qrcode = await this.qrCodeModel
+      .findOne({ userId })
+      .populate('retailerId', 'storeName storeSlug');
+    if (!qrcode) throw new HttpException('QR code not found', 404);
+
+    return qrcode;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} qrcode`;
-  }
+  async regenerateQrcode(userId: string) {
+    const retailer = await this.retailerModel.findOne({ userId });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
 
-  update(id: number, updateQrcodeDto: UpdateQrcodeDto) {
-    return `This action updates a #${id} qrcode`;
-  }
+    const storeUrl = buildStoreQrTarget(retailer.storeSlug);
+    const { url: qrCodeUrl } = await generateAndUploadQrCode(storeUrl);
 
-  remove(id: number) {
-    return `This action removes a #${id} qrcode`;
+    retailer.qrCodeUrl = qrCodeUrl;
+    await retailer.save();
+
+    const qrcode = await this.qrCodeModel.findOneAndUpdate(
+      { userId: retailer.userId, retailerId: retailer._id },
+      { qrcodeUrl: qrCodeUrl },
+      { new: true, upsert: true },
+    );
+
+    return qrcode;
   }
 }

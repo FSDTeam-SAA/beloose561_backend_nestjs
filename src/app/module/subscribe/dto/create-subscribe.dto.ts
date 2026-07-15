@@ -14,6 +14,11 @@ export class CreateSubscribeDto {
   @IsOptional()
   price!: number;
 
+  @ApiPropertyOptional({ example: '', enum: ['monthly', 'yearly'] })
+  @IsString()
+  @IsOptional()
+  plan!: string;
+
   @ApiPropertyOptional({ example: '', type: [String] })
   @IsArray()
   @IsString({ each: true })

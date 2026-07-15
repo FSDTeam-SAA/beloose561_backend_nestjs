@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { HydratedDocument } from 'mongoose';
+import mongoose, { HydratedDocument, Types } from 'mongoose';
 import config from '../../../config';
 export type UserDocument = HydratedDocument<User>;
 
@@ -65,6 +65,15 @@ export class User {
 
   @Prop()
   verifiedForget!: boolean;
+
+  @Prop({ default: false })
+  isSubscription!: boolean;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Subscribe' })
+  subscription!: Types.ObjectId;
+
+  @Prop({ type: Date })
+  subscriptionExpiry!: Date | null;
 
   @Prop()
   stripeAccountId!: string;

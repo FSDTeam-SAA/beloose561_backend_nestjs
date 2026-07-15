@@ -29,7 +29,7 @@ export class PaymentController {
     summary: 'Create payment intent for subscription',
   })
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('user'))
+  @UseGuards(AuthGuard('retailer'))
   async paySubscribe(
     @Req() req: Request,
     @Param('subscribeId') subscribeId: string,

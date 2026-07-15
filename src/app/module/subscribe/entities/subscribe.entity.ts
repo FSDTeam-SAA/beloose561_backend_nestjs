@@ -11,6 +11,9 @@ export class Subscribe {
   @Prop()
   price!: number;
 
+  @Prop({ enum: ['monthly', 'yearly'], default: 'monthly' })
+  plan!: string;
+
   @Prop()
   features!: [string];
 
