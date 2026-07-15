@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Stripe from 'stripe';
-import config from 'src/app/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from '../user/entities/user.entity';
+import type { Response } from 'express';
 import { Model } from 'mongoose';
+import config from 'src/app/config';
+import Stripe from 'stripe';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import {
   Subscribe,
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
-import type { Response } from 'express';
+import { User, UserDocument } from '../user/entities/user.entity';
 
 @Injectable()
 export class WebhookService {
@@ -99,6 +99,23 @@ export class WebhookService {
       const alreadyAdded = plan.user?.some(
         (id) => id.toString() === payment.user.toString(),
       );
+
+      const expireDate = new Date();
+
+      if (plan.plan === 'yearly') {
+        expireDate.setFullYear(expireDate.getFullYear() + 1);
+      } else if (plan.plan === 'monthly') {
+        expireDate.setMonth(expireDate.getMonth() + 1);
+      }
+
+      const user = await this.userModel.findById(payment.user);
+      if (!user) return res.json({ received: true });
+
+      user.isSubscription = true;
+      user.subscription = plan._id;
+      user.subscriptionExpiry = expireDate;
+      await user.save();
+
       if (!alreadyAdded) {
         plan.user = plan.user ?? [];
         plan.user.push(payment.user);

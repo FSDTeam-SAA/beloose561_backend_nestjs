@@ -14,7 +14,6 @@ export const generateAndUploadQrCode = async (
     margin: 2,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   return fileUpload.uploadBufferToCloudinary(
     buffer,
     `${config.cloudinary.folder}/qrcodes`,

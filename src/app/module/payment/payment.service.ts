@@ -1,16 +1,16 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Payment, PaymentDocument } from './entities/payment.entity';
 import { Model, Types } from 'mongoose';
-import { User, UserDocument } from '../user/entities/user.entity';
+import config from 'src/app/config';
+import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
+import { IFilterParams } from 'src/app/helpers/pick';
+import Stripe from 'stripe';
 import {
   Subscribe,
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
-import Stripe from 'stripe';
-import config from 'src/app/config';
-import { IFilterParams } from 'src/app/helpers/pick';
-import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
+import { User, UserDocument } from '../user/entities/user.entity';
+import { Payment, PaymentDocument } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentService {
@@ -94,6 +94,7 @@ export class PaymentService {
         subscribeId: plan._id.toString(),
         paymentType: 'subscription',
         price: plan.price.toString(),
+        planName: plan.plan,
       },
     });
 

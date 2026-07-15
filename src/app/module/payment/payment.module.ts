@@ -8,6 +8,7 @@ import {
 } from '../subscribe/entities/subscribe.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from './entities/payment.entity';
+import { SubscribePaymentCronService } from 'src/app/helpers/subscribePayment.cron';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { Payment, PaymentSchema } from './entities/payment.entity';
     ]),
   ],
   controllers: [PaymentController],
-  providers: [PaymentService],
+  providers: [PaymentService, SubscribePaymentCronService],
 })
 export class PaymentModule {}
