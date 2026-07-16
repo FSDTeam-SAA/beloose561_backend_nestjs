@@ -10,6 +10,7 @@ import {
 } from '../retailer/entities/retailer.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateHumidorDto } from './dto/create-humidor.dto';
+import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { Humidor, HumidorDocument } from './entities/humidor.entity';
 
 @Injectable()
@@ -75,6 +76,18 @@ export class HumidorService {
 
   async getHumidorById(id: string) {
     const result = await this.humidorModel.findById(id);
+    if (!result) {
+      throw new HttpException('Humidor not found', 404);
+    }
+    return result;
+  }
+
+  async updateHumidor(id: string, updateHumidorDto: UpdateHumidorDto) {
+    const result = await this.humidorModel.findByIdAndUpdate(
+      id,
+      updateHumidorDto,
+      { new: true },
+    );
     if (!result) {
       throw new HttpException('Humidor not found', 404);
     }

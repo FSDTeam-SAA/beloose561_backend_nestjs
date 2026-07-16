@@ -1,9 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +21,7 @@ import type { Request } from 'express';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CreateHumidorDto } from './dto/create-humidor.dto';
+import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { HumidorService } from './humidor.service';
 
 @ApiTags('humidor')
@@ -44,7 +49,7 @@ export class HumidorController {
     };
   }
 
-  @Post('my-humidor')
+  @Get('my-humidor')
   @ApiOperation({ summary: 'Get all my Humidor' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
@@ -74,5 +79,35 @@ export class HumidorController {
       meta: result.meta,
       data: result.data,
     };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get Humidor by id' })
+  @HttpCode(HttpStatus.CREATED)
+  async getHumidorById(@Param('id') id: string) {
+    const result = await this.humidorService.getHumidorById(id);
+    return result;
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update Humidor by id' })
+  @HttpCode(HttpStatus.CREATED)
+  async updateHumidorById(
+    @Param('id') id: string,
+    @Body() updateHumidorDto: UpdateHumidorDto,
+  ) {
+    const result = await this.humidorService.updateHumidor(
+      id,
+      updateHumidorDto,
+    );
+    return result;
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete Humidor by id' })
+  @HttpCode(HttpStatus.CREATED)
+  async deleteHumidorById(@Param('id') id: string) {
+    const result = await this.humidorService.deleteHumidor(id);
+    return result;
   }
 }
