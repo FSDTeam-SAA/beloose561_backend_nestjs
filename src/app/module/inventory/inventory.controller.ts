@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -16,6 +17,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiQuery,
@@ -34,10 +36,70 @@ import { InventoryService } from './inventory.service';
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'Get retailer inventory list' })
+  @Get('/my-inventory')
+  @ApiOperation({ summary: 'Get my retailer inventory list' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
+  @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
+  @ApiQuery({ name: 'name', type: 'string', required: false })
+  @ApiQuery({ name: 'brand', type: 'string', required: false })
+  @ApiQuery({ name: 'productLine', type: 'string', required: false })
+  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
+  @ApiQuery({ name: 'country', type: 'string', required: false })
+  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
+  @ApiQuery({ name: 'binder', type: 'string', required: false })
+  @ApiQuery({ name: 'filler', type: 'string', required: false })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'size', type: 'string', required: false })
+  @ApiQuery({ name: 'length', type: 'string', required: false })
+  @ApiQuery({ name: 'flavorNotes', type: 'string', required: false })
+  @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
+  @ApiQuery({ name: 'description', type: 'string', required: false })
+  @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
+  @ApiQuery({ name: 'status', type: 'string', required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false })
+  @ApiQuery({ name: 'page', type: 'number', required: false })
+  @ApiQuery({ name: 'sortBy', type: 'string', required: false })
+  @ApiQuery({ name: 'sortOrder', type: 'string', required: false })
+  @HttpCode(HttpStatus.OK)
+  async getMyInventory(@Req() req: Request) {
+    const filters = pick(req.query, [
+      'searchTerm',
+      'name',
+      'brand',
+      'productLine',
+      'manufacturer',
+      'country',
+      'wrapper',
+      'binder',
+      'filler',
+      'strength',
+      'size',
+      'length',
+      'flavorNotes',
+      'smokingTime',
+      'description',
+      'whyYoullLikeThis',
+      'status',
+    ]);
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const result = await this.inventoryService.getMyInventory(
+      req.user!.id,
+      filters,
+      options,
+    );
+
+    return {
+      message: 'Inventory retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Get('/')
+  @ApiOperation({ summary: 'Get all admin inventory list' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
   @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
   @ApiQuery({ name: 'name', type: 'string', required: false })
   @ApiQuery({ name: 'brand', type: 'string', required: false })
@@ -82,7 +144,64 @@ export class InventoryController {
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.inventoryService.getAllInventory(
-      req.user!.id,
+      filters,
+      options,
+    );
+
+    return {
+      message: 'Inventory retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Get(':slug/inventory-list')
+  @ApiOperation({ summary: 'Get retailer inventory list' })
+  @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
+  @ApiQuery({ name: 'name', type: 'string', required: false })
+  @ApiQuery({ name: 'brand', type: 'string', required: false })
+  @ApiQuery({ name: 'productLine', type: 'string', required: false })
+  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
+  @ApiQuery({ name: 'country', type: 'string', required: false })
+  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
+  @ApiQuery({ name: 'binder', type: 'string', required: false })
+  @ApiQuery({ name: 'filler', type: 'string', required: false })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'size', type: 'string', required: false })
+  @ApiQuery({ name: 'length', type: 'string', required: false })
+  @ApiQuery({ name: 'flavorNotes', type: 'string', required: false })
+  @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
+  @ApiQuery({ name: 'description', type: 'string', required: false })
+  @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
+  @ApiQuery({ name: 'status', type: 'string', required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false })
+  @ApiQuery({ name: 'page', type: 'number', required: false })
+  @ApiQuery({ name: 'sortBy', type: 'string', required: false })
+  @ApiQuery({ name: 'sortOrder', type: 'string', required: false })
+  @HttpCode(HttpStatus.OK)
+  async getInventorys(@Param('slug') slug: string, @Req() req: Request) {
+    const filters = pick(req.query, [
+      'searchTerm',
+      'name',
+      'brand',
+      'productLine',
+      'manufacturer',
+      'country',
+      'wrapper',
+      'binder',
+      'filler',
+      'strength',
+      'size',
+      'length',
+      'flavorNotes',
+      'smokingTime',
+      'description',
+      'whyYoullLikeThis',
+      'status',
+    ]);
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const result = await this.inventoryService.getInventorys(
+      slug,
       filters,
       options,
     );
@@ -155,12 +274,26 @@ export class InventoryController {
     };
   }
 
-  @Put(':id/status')
+  @Patch(':id/status')
   @ApiOperation({ summary: 'Update inventory status admin' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          example: 'active',
+        },
+      },
+    },
+  })
   @HttpCode(HttpStatus.OK)
-  async adminUpdateStatus(@Param('id') id: string, @Body() status: string) {
+  async adminUpdateStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+  ) {
     const result = await this.inventoryService.adminUpdateStatus(id, status);
 
     return {

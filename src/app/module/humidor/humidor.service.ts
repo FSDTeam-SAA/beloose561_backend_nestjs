@@ -1,6 +1,9 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import buildWhereConditions from '../../helpers/buildWhereConditions';
+import paginationHelper, { IOptions } from '../../helpers/pagenation';
+import { IFilterParams } from '../../helpers/pick';
 import {
   Retailer,
   RetailerDocument,
@@ -33,5 +36,56 @@ export class HumidorService {
       retailerId: retailer._id,
     });
     return humidor;
+  }
+
+  async getMyAllHumidor(
+    userId: string,
+    params: IFilterParams,
+    options: IOptions,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new HttpException('User not found', 404);
+    }
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) {
+      throw new HttpException('Retailer not found', 404);
+    }
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const whereConditions = buildWhereConditions(
+      params,
+      ['name', 'location', 'description', 'shelfes'],
+      { userId: user._id, retailerId: retailer._id },
+    );
+    const result = await this.humidorModel
+      .find(whereConditions)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+    const total = await this.humidorModel.countDocuments(whereConditions);
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+      },
+      data: result,
+    };
+  }
+
+  async getHumidorById(id: string) {
+    const result = await this.humidorModel.findById(id);
+    if (!result) {
+      throw new HttpException('Humidor not found', 404);
+    }
+    return result;
+  }
+
+  async deleteHumidor(id: string) {
+    const result = await this.humidorModel.findByIdAndDelete(id);
+    if (!result) {
+      throw new HttpException('Humidor not found', 404);
+    }
+    return result;
   }
 }

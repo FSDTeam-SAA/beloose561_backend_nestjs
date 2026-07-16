@@ -58,7 +58,7 @@ export class InventoryService {
     return inventory;
   }
 
-  async getAllInventory(
+  async getMyInventory(
     userId: string,
     params: IFilterParams,
     options: IOptions,
@@ -67,6 +67,95 @@ export class InventoryService {
     if (!user) throw new HttpException('User not found', 404);
     const retailer = await this.retailerModel.findOne({ userId: user._id });
     if (!retailer) throw new HttpException('Retailer not found', 404);
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const whereConditions = buildWhereConditions(
+      params,
+      [
+        'name',
+        'brand',
+        'productLine',
+        'manufacturer',
+        'country',
+        'wrapper',
+        'binder',
+        'filler',
+        'strength',
+        'size',
+        'length',
+        'flavorNotes',
+        'smokingTime',
+        'description',
+        'whyYoullLikeThis',
+        'status',
+      ],
+      {
+        userId: user._id,
+        retailerId: retailer._id,
+      },
+    );
+    const result = await this.inventoryRepository
+      .find(whereConditions)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+    const total =
+      await this.inventoryRepository.countDocuments(whereConditions);
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+      },
+      data: result,
+    };
+  }
+
+  async getAllInventory(params: IFilterParams, options: IOptions) {
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const whereConditions = buildWhereConditions(params, [
+      'name',
+      'brand',
+      'productLine',
+      'manufacturer',
+      'country',
+      'wrapper',
+      'binder',
+      'filler',
+      'strength',
+      'size',
+      'length',
+      'flavorNotes',
+      'smokingTime',
+      'description',
+      'whyYoullLikeThis',
+      'status',
+    ]);
+    const result = await this.inventoryRepository
+      .find(whereConditions)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+    const total =
+      await this.inventoryRepository.countDocuments(whereConditions);
+    return {
+      meta: {
+        page,
+        limit,
+        total,
+      },
+      data: result,
+    };
+  }
+
+  async getInventorys(
+    shopslag: string,
+    params: IFilterParams,
+    options: IOptions,
+  ) {
+    const retailer = await this.retailerModel.findOne({ storeSlug: shopslag });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    const user = await this.userModel.findById(retailer.userId);
+    if (!user) throw new HttpException('User not found', 404);
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
     const whereConditions = buildWhereConditions(
       params,
