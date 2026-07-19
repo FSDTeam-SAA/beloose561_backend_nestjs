@@ -36,6 +36,7 @@ import { UpdateStaffPickDto } from './dto/update-staff-pick.dto';
 import { Inventory, InventoryDocument } from './entities/inventory.entity';
 
 const OPPORTUNITY_DAYS = 90;
+const SURPRISE_ME_MAX_TRIES = 5;
 
 @Injectable()
 export class InventoryService {
@@ -1259,5 +1260,124 @@ export class InventoryService {
     const { url: qrCodeUrl } = await generateAndUploadQrCode(targetUrl);
 
     return { url: targetUrl, qrCodeUrl };
+  }
+
+  // "🎲 Surprise Me" - weighted-random pick for a browsing customer, biased
+  // toward staff picks / new arrivals / today's featured / rarely-searched
+  // "hidden gems", and away from the already-popular. `excludeIds` is the
+  // session's previously-shown picks, kept client-side and echoed back each
+  // "Try Another" so the same cigar never repeats within a session.
+  async getSurpriseMe(shopSlug: string, excludeIds: string[]) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const comeBackTomorrow = {
+      limitReached: true,
+      message:
+        "You've seen all our surprise picks today! Come back tomorrow for new surprises 😊",
+    };
+
+    const validExcludeIds = excludeIds.filter((id) =>
+      mongoose.isValidObjectId(id),
+    );
+    const triesSoFar = validExcludeIds.length;
+    if (triesSoFar >= SURPRISE_ME_MAX_TRIES) return comeBackTomorrow;
+
+    const candidates = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+        _id: { $nin: validExcludeIds },
+      })
+      .populate('humidorId', 'name')
+      .populate('masterCigarId', 'flavorNotes smokingTime')
+      .lean();
+    if (candidates.length === 0) return comeBackTomorrow;
+
+    const today = this.startOfDay(new Date());
+    const avgSearches =
+      candidates.reduce(
+        (sum: number, item: any) => sum + ((item.totalSearches as number) ?? 0),
+        0,
+      ) / candidates.length;
+
+    const weighted = candidates.map((item: any) => {
+      let weight = 1;
+      const reasons: string[] = [];
+
+      if (item.isStaffPick) {
+        weight += 3;
+        reasons.push('a staff pick');
+      }
+      if (item.isNewArrival) {
+        weight += 3;
+        reasons.push('a fresh new arrival');
+      }
+      const featuredToday =
+        item.isDailyFeatured &&
+        item.featuredDate &&
+        new Date(item.featuredDate as string).getTime() === today.getTime();
+      if (featuredToday) {
+        weight += 3;
+        reasons.push("today's featured cigar");
+      }
+      if ((item.totalSearches ?? 0) === 0) {
+        weight += 2;
+        reasons.push('a hidden gem in our humidor');
+      } else if (avgSearches > 0 && item.totalSearches > avgSearches) {
+        weight = Math.max(1, weight - 1);
+      }
+
+      return { item, weight, reasons };
+    });
+
+    const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let chosen = weighted[weighted.length - 1];
+    for (const candidate of weighted) {
+      roll -= candidate.weight;
+      if (roll <= 0) {
+        chosen = candidate;
+        break;
+      }
+    }
+
+    const { item, reasons } = chosen;
+    const master = item.masterCigarId;
+    const whyThisCigar =
+      reasons.length > 0
+        ? `This is ${reasons.join(' and ')} - you might just find your new favorite today.`
+        : 'A hidden gem in our humidor - you might just find your new favorite today.';
+
+    return {
+      limitReached: false,
+      triesUsed: triesSoFar + 1,
+      triesRemaining: SURPRISE_ME_MAX_TRIES - (triesSoFar + 1),
+      maxTries: SURPRISE_ME_MAX_TRIES,
+      item: {
+        _id: item._id,
+        name: item.name,
+        brand: item.brand,
+        strength: item.strength,
+        wrapper: item.wrapper,
+        size: item.size,
+        image: item.image,
+        smokingTime: master?.smokingTime,
+        flavorNotes: master?.flavorNotes,
+        price: item.price,
+        quantity: item.quantity,
+        location: {
+          humidorName:
+            item.humidorId && typeof item.humidorId === 'object'
+              ? item.humidorId.name
+              : undefined,
+          shelfName: item.shelfName,
+        },
+        whyThisCigar,
+      },
+    };
   }
 }

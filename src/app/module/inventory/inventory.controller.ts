@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -482,6 +483,38 @@ export class InventoryController {
 
     return {
       message: 'Daily featured retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get(':slug/surprise-me')
+  @ApiOperation({
+    summary:
+      '🎲 Surprise Me - weighted-random cigar pick for a browsing customer (public)',
+  })
+  @ApiQuery({
+    name: 'exclude',
+    type: 'string',
+    required: false,
+    description:
+      'Comma-separated ids of cigars already shown this session (from previous "Try Another" calls)',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getSurpriseMe(
+    @Param('slug') slug: string,
+    @Query('exclude') exclude?: string,
+  ) {
+    const excludeIds = exclude
+      ? exclude
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
+
+    const result = await this.inventoryService.getSurpriseMe(slug, excludeIds);
+
+    return {
+      message: 'Surprise pick retrieved successfully',
       data: result,
     };
   }
