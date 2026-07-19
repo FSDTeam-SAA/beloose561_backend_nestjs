@@ -12,8 +12,8 @@ export class User {
   })
   fullName!: string;
 
-  @Prop()
-  businessName?: string;
+  // @Prop()
+  // businessName?: string;
 
   @Prop({
     required: [true, 'Email is required'],

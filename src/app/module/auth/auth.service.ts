@@ -1,13 +1,13 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { User, UserDocument } from '../user/entities/user.entity';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Response } from 'express';
-import * as bcrypt from 'bcrypt';
 import * as jwt from '@nestjs/jwt';
-import config from '../../config';
+import { InjectModel } from '@nestjs/mongoose';
+import * as bcrypt from 'bcrypt';
+import { Response } from 'express';
+import { Model } from 'mongoose';
 import sendMailer from 'src/app/helpers/sendMailer';
+import config from '../../config';
+import { User, UserDocument } from '../user/entities/user.entity';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,13 +16,32 @@ export class AuthService {
     private readonly jwtService: jwt.JwtService,
   ) {}
 
-  async register(CreateAuthDto: CreateAuthDto) {
+  async register(CreateAuthDto: CreateAuthDto, res: Response) {
     const user = await this.userModel.findOne({ email: CreateAuthDto.email });
     if (user) {
       throw new HttpException('User already exists', 400);
     }
     const newUser = await this.userModel.create(CreateAuthDto);
-    return newUser;
+    const accessToken = this.jwtService.sign(
+      { id: newUser._id, email: newUser.email, role: newUser.role },
+      {
+        secret: config.jwt.accessTokenSecret,
+        expiresIn: config.jwt.accessTokenExpires as any,
+      } as jwt.JwtSignOptions,
+    );
+    const refreshToken = this.jwtService.sign(
+      { id: newUser._id, email: newUser.email, role: newUser.role },
+      {
+        secret: config.jwt.refreshTokenSecret,
+        expiresIn: config.jwt.refreshTokenExpires as any,
+      } as jwt.JwtSignOptions,
+    );
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+    return { accessToken, newUser };
   }
 
   async login(loginDto: { email: string; password: string }, res: Response) {

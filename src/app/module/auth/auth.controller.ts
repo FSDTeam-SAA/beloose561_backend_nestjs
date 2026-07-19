@@ -8,6 +8,9 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import AuthGuard from 'src/app/middlewares/auth.guard';
 import { AuthService } from './auth.service';
 import {
   ChangePasswordDto,
@@ -17,9 +20,6 @@ import {
   ResetPasswordDto,
   VerifyEmailDto,
 } from './dto/create-auth.dto';
-import type { Request, Response } from 'express';
-import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
-import AuthGuard from 'src/app/middlewares/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,8 +27,11 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() CreateAuthDto: CreateAuthDto) {
-    const result = await this.authService.register(CreateAuthDto);
+  async register(
+    @Body() CreateAuthDto: CreateAuthDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(CreateAuthDto, res);
 
     return {
       message: 'User registered successfully',
