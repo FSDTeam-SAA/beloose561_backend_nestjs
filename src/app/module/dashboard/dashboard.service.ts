@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { Model } from 'mongoose';
+import { InventoryService } from '../inventory/inventory.service';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
+
+const PAYMENT_DUE_SOON_DAYS = 3;
 
 @Injectable()
 export class DashboardService {
@@ -11,6 +14,7 @@ export class DashboardService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async dashboardOverView() {
@@ -97,6 +101,119 @@ export class DashboardService {
         totalRevenue: Number(totalYearRevenue.toFixed(2)),
       },
       chartData,
+    };
+  }
+
+  // "What should I do today?" retailer dashboard - urgent/attention cards,
+  // today's snapshot, and quick-action status for the customer-experience
+  // features (Daily Featured / Staff Picks / New Arrivals).
+  async getRetailerActionCenter(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+
+    const [insights, opportunities, dailyFeatured, staffPicks, newArrivals] =
+      await Promise.all([
+        this.inventoryService.getDashboardInsights(userId),
+        this.inventoryService.getInventoryOpportunities(userId),
+        this.inventoryService.getMyDailyFeatured(userId),
+        this.inventoryService.getMyStaffPicks(userId),
+        this.inventoryService.getMyNewArrivals(userId),
+      ]);
+
+    const now = new Date();
+    const daysUntilRenewal = user.subscriptionExpiry
+      ? Math.ceil(
+          (new Date(user.subscriptionExpiry).getTime() - now.getTime()) /
+            86400000,
+        )
+      : null;
+    const paymentDueSoon =
+      user.isSubscription &&
+      daysUntilRenewal !== null &&
+      daysUntilRenewal >= 0 &&
+      daysUntilRenewal <= PAYMENT_DUE_SOON_DAYS;
+
+    const urgent: Record<string, unknown>[] = [];
+    if (insights.outOfStock.length > 0) {
+      urgent.push({
+        type: 'out_of_stock',
+        title: 'Out of Stock',
+        message: `${insights.outOfStock.length} cigar(s) have no stock left`,
+        items: insights.outOfStock,
+      });
+    }
+    if (dailyFeatured.today.length === 0) {
+      urgent.push({
+        type: 'daily_featured_not_set',
+        title: 'Daily Featured Not Set',
+        message: "You haven't set today's featured cigar yet",
+      });
+    }
+    if (paymentDueSoon) {
+      urgent.push({
+        type: 'payment_due',
+        title: 'Payment Due',
+        message: `Your subscription renews in ${daysUntilRenewal} day(s)`,
+        renewsAt: user.subscriptionExpiry,
+      });
+    }
+
+    const needsAttention: Record<string, unknown>[] = [];
+    if (insights.lowStock.length > 0) {
+      needsAttention.push({
+        type: 'low_stock',
+        title: 'Low Stock Alert',
+        message: `${insights.lowStock.length} cigar(s) are running low`,
+        items: insights.lowStock,
+      });
+    }
+    if (insights.underReview.length > 0) {
+      needsAttention.push({
+        type: 'under_review',
+        title: 'Products Under Review',
+        message: `${insights.underReview.length} cigar(s) you submitted are waiting for admin approval`,
+        items: insights.underReview,
+      });
+    }
+    if (opportunities.count > 0) {
+      needsAttention.push({
+        type: 'inventory_opportunities',
+        title: 'Inventory Opportunities',
+        message: `${opportunities.count} cigar(s) haven't sold in ${opportunities.days}+ days`,
+        items: opportunities.data,
+      });
+    }
+
+    return {
+      greetingName: user.fullName,
+      date: now,
+      urgent,
+      needsAttention,
+      snapshot: {
+        totalStock: insights.totalStock,
+        totalSearches: insights.topSearched.reduce(
+          (sum, item) => sum + item.searches,
+          0,
+        ),
+        // QR scan counts and sales-attributed revenue aren't tracked by
+        // any existing module yet, so they're intentionally omitted here
+        // rather than faked.
+      },
+      topSearched: insights.topSearched,
+      quickActions: {
+        dailyFeatured: {
+          isSet: dailyFeatured.today.length > 0,
+          items: dailyFeatured.today,
+        },
+        staffPicks: {
+          count: staffPicks.count,
+          items: staffPicks.data,
+        },
+        newArrivals: {
+          count: newArrivals.count,
+          items: newArrivals.data,
+        },
+      },
     };
   }
 }

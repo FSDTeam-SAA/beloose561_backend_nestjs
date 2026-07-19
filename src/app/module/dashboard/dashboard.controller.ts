@@ -4,15 +4,36 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
+
+  @Get('retailer/today')
+  @ApiOperation({
+    summary:
+      '"What should I do today?" retailer action dashboard - urgent alerts, needs-attention list, snapshot, and quick actions',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerActionCenter(@Req() req: Request) {
+    const result = await this.dashboardService.getRetailerActionCenter(
+      req.user!.id,
+    );
+
+    return {
+      message: 'Retailer action dashboard retrieved successfully',
+      data: result,
+    };
+  }
 
   @Get('overview')
   @ApiOperation({

@@ -29,5 +29,6 @@ import { InventoryService } from './inventory.service';
     NewArrivalExpiryCronService,
     DailyFeaturedExpiryCronService,
   ],
+  exports: [InventoryService],
 })
 export class InventoryModule {}

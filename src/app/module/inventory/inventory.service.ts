@@ -850,4 +850,88 @@ export class InventoryService {
     const data = items.map((item) => this.formatDailyFeatured(item));
     return { count: data.length, data };
   }
+
+  // Powers the retailer "what should I do today" dashboard: stock alerts,
+  // items awaiting admin review, top-searched cigars, and total stock on hand.
+  async getDashboardInsights(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const [outOfStock, lowStock, underReview, topSearched, totalStockAgg] =
+      await Promise.all([
+        this.inventoryRepository
+          .find({ retailerId: retailer._id, status: 'active', quantity: 0 })
+          .select('name totalSearches')
+          .sort({ totalSearches: -1 })
+          .lean(),
+        this.inventoryRepository
+          .find({
+            retailerId: retailer._id,
+            status: 'active',
+            quantity: { $gt: 0 },
+            $expr: { $lte: ['$quantity', '$lowStockThreshold'] },
+          })
+          .select('name quantity lowStockThreshold')
+          .sort({ quantity: 1 })
+          .lean(),
+        this.inventoryRepository
+          .find({ retailerId: retailer._id, status: 'under_review' })
+          .select('name createdAt')
+          .sort({ createdAt: 1 })
+          .lean(),
+        this.inventoryRepository
+          .find({
+            retailerId: retailer._id,
+            status: 'active',
+            totalSearches: { $gt: 0 },
+          })
+          .select('name totalSearches quantity lowStockThreshold')
+          .sort({ totalSearches: -1 })
+          .limit(5)
+          .lean(),
+        this.inventoryRepository.aggregate([
+          { $match: { retailerId: retailer._id, status: 'active' } },
+          { $group: { _id: null, totalStock: { $sum: '$quantity' } } },
+        ]),
+      ]);
+
+    const stockStatus = (item: any) =>
+      item.quantity === 0
+        ? 'out_of_stock'
+        : item.quantity <= item.lowStockThreshold
+          ? 'low_stock'
+          : 'in_stock';
+
+    return {
+      outOfStock: outOfStock.map((item: any) => ({
+        _id: item._id,
+        name: item.name,
+        searches: item.totalSearches,
+      })),
+      lowStock: lowStock.map((item: any) => ({
+        _id: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        lowStockThreshold: item.lowStockThreshold,
+      })),
+      underReview: underReview.map((item: any) => ({
+        _id: item._id,
+        name: item.name,
+        submittedAt: item.createdAt,
+        daysWaiting: Math.floor(
+          (Date.now() - new Date(item.createdAt as string).getTime()) /
+            86400000,
+        ),
+      })),
+      topSearched: topSearched.map((item: any) => ({
+        _id: item._id,
+        name: item.name,
+        searches: item.totalSearches,
+        stockStatus: stockStatus(item),
+      })),
+      totalStock: (totalStockAgg[0]?.totalStock as number) ?? 0,
+    };
+  }
 }
