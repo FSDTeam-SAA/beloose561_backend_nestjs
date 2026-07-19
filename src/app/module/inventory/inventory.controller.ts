@@ -31,6 +31,7 @@ import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
+import { GuidedDiscoveryDto } from './dto/guided-discovery.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
 import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
 import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
@@ -215,6 +216,114 @@ export class InventoryController {
     return {
       message: 'All featured cleared successfully',
       data: result,
+    };
+  }
+
+  @Get('/customer-search/quick')
+  @ApiOperation({
+    summary: 'Customer Search - Quick Search (staff searching for a customer)',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'size', type: 'string', required: false })
+  @ApiQuery({ name: 'minPrice', type: 'number', required: false })
+  @ApiQuery({ name: 'maxPrice', type: 'number', required: false })
+  @ApiQuery({ name: 'inStockOnly', type: 'boolean', required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false })
+  @ApiQuery({ name: 'page', type: 'number', required: false })
+  @ApiQuery({ name: 'sortBy', type: 'string', required: false })
+  @ApiQuery({ name: 'sortOrder', type: 'string', required: false })
+  @HttpCode(HttpStatus.OK)
+  async quickSearchForRetailer(@Req() req: Request) {
+    const { searchTerm, strength, size, minPrice, maxPrice, inStockOnly } =
+      req.query;
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
+    const result = await this.inventoryService.quickSearchForRetailer(
+      req.user!.id,
+      {
+        searchTerm: searchTerm as string | undefined,
+        strength: strength as string | undefined,
+        size: size as string | undefined,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        inStockOnly: inStockOnly === 'true',
+      },
+      options,
+    );
+
+    return {
+      message: 'Search results retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Post('/customer-search/guided')
+  @ApiOperation({
+    summary: 'Customer Search - Guided Discovery (ranked recommendations)',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async guidedDiscoverySearch(
+    @Req() req: Request,
+    @Body() guidedDiscoveryDto: GuidedDiscoveryDto,
+  ) {
+    const result = await this.inventoryService.guidedDiscoverySearch(
+      req.user!.id,
+      guidedDiscoveryDto,
+    );
+
+    return {
+      message: 'Guided discovery results retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('/customer-search/browse')
+  @ApiOperation({ summary: 'Customer Search - Browse All Inventory' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @ApiQuery({ name: 'humidorId', type: 'string', required: false })
+  @ApiQuery({ name: 'shelfName', type: 'string', required: false })
+  @ApiQuery({
+    name: 'inStockOnly',
+    type: 'boolean',
+    required: false,
+    description: 'Defaults to true',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    enum: ['name', 'price', 'strength'],
+    required: false,
+  })
+  @ApiQuery({ name: 'sortOrder', enum: ['asc', 'desc'], required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false })
+  @ApiQuery({ name: 'page', type: 'number', required: false })
+  @HttpCode(HttpStatus.OK)
+  async browseInventoryForRetailer(@Req() req: Request) {
+    const { humidorId, shelfName, inStockOnly, sortBy, sortOrder } = req.query;
+    const options = pick(req.query, ['limit', 'page']);
+
+    const result = await this.inventoryService.browseInventoryForRetailer(
+      req.user!.id,
+      {
+        humidorId: humidorId as string | undefined,
+        shelfName: shelfName as string | undefined,
+        inStockOnly: inStockOnly === undefined ? true : inStockOnly === 'true',
+        sortBy: sortBy as 'name' | 'price' | 'strength' | undefined,
+        sortOrder: sortOrder as 'asc' | 'desc' | undefined,
+      },
+      options,
+    );
+
+    return {
+      message: 'Inventory retrieved successfully',
+      meta: result.meta,
+      data: result.data,
     };
   }
 
@@ -684,6 +793,49 @@ export class InventoryController {
 
     return {
       message: 'Daily featured removed successfully',
+      data: result,
+    };
+  }
+
+  @Get(':id/customer-view')
+  @ApiOperation({
+    summary:
+      '"Show Customer" - customer-facing detail view of one inventory item',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getCustomerViewDetail(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.inventoryService.getCustomerViewDetail(
+      req.user!.id,
+      id,
+    );
+
+    return {
+      message: 'Customer view retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Post(':id/share-link')
+  @ApiOperation({
+    summary:
+      '"Show on Phone" - QR code link to this item\'s customer-facing page',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async generateCustomerShareLink(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const result = await this.inventoryService.generateCustomerShareLink(
+      req.user!.id,
+      id,
+    );
+
+    return {
+      message: 'Share link generated successfully',
       data: result,
     };
   }

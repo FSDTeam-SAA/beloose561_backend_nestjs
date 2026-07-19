@@ -5,6 +5,10 @@ import buildWhereConditions from '../../helpers/buildWhereConditions';
 import { fileUpload } from '../../helpers/fileUploder';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
+import {
+  buildProductQrTarget,
+  generateAndUploadQrCode,
+} from '../../helpers/qrcodeGenerator';
 import { Humidor, HumidorDocument } from '../humidor/entities/humidor.entity';
 import {
   MasterDatabase,
@@ -19,6 +23,10 @@ import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
+import {
+  GuidedDiscoveryDto,
+  NewOrFamiliarPreference,
+} from './dto/guided-discovery.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
 import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
 import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
@@ -933,5 +941,323 @@ export class InventoryService {
       })),
       totalStock: (totalStockAgg[0]?.totalStock as number) ?? 0,
     };
+  }
+
+  // Retailer-assisted "Customer Search" - staff search the same inventory a
+  // customer would, on behalf of a customer standing in front of them.
+  private formatForStaffSearch(item: Record<string, any>) {
+    const humidor = item.humidorId;
+    return {
+      _id: item._id,
+      name: item.name,
+      brand: item.brand,
+      strength: item.strength,
+      wrapper: item.wrapper,
+      size: item.size,
+      image: item.image,
+      price: item.price,
+      quantity: item.quantity,
+      inStock: item.quantity > 0,
+      shelfName: item.shelfName,
+      humidorName:
+        humidor && typeof humidor === 'object' ? humidor.name : undefined,
+    };
+  }
+
+  async quickSearchForRetailer(
+    userId: string,
+    params: {
+      searchTerm?: string;
+      strength?: string;
+      size?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      inStockOnly?: boolean;
+    },
+    options: IOptions,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+
+    const filter: Record<string, unknown> = {
+      retailerId: retailer._id,
+      status: 'active',
+    };
+    if (params.searchTerm) {
+      const regex = new RegExp(params.searchTerm, 'i');
+      filter.$or = [{ name: regex }, { brand: regex }];
+    }
+    if (params.strength) filter.strength = params.strength;
+    if (params.size) filter.size = params.size;
+    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+      filter.price = {
+        ...(params.minPrice !== undefined && { $gte: params.minPrice }),
+        ...(params.maxPrice !== undefined && { $lte: params.maxPrice }),
+      };
+    }
+    if (params.inStockOnly) filter.quantity = { $gt: 0 };
+
+    const [items, total] = await Promise.all([
+      this.inventoryRepository
+        .find(filter)
+        .populate('humidorId', 'name')
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.inventoryRepository.countDocuments(filter),
+    ]);
+
+    return {
+      meta: { page, limit, total },
+      data: items.map((item) => this.formatForStaffSearch(item)),
+    };
+  }
+
+  async browseInventoryForRetailer(
+    userId: string,
+    params: {
+      humidorId?: string;
+      shelfName?: string;
+      inStockOnly?: boolean;
+      sortBy?: 'name' | 'price' | 'strength';
+      sortOrder?: 'asc' | 'desc';
+    },
+    options: IOptions,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const { limit, page, skip } = paginationHelper(options);
+
+    const filter: Record<string, unknown> = {
+      retailerId: retailer._id,
+      status: 'active',
+    };
+    if (params.humidorId) filter.humidorId = params.humidorId;
+    if (params.shelfName) filter.shelfName = params.shelfName;
+    if (params.inStockOnly !== false) filter.quantity = { $gt: 0 };
+
+    const sortField = params.sortBy ?? 'name';
+    const sortDir = params.sortOrder === 'desc' ? -1 : 1;
+
+    const [items, total, totalInventory] = await Promise.all([
+      this.inventoryRepository
+        .find(filter)
+        .populate('humidorId', 'name')
+        .sort({ [sortField]: sortDir })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.inventoryRepository.countDocuments(filter),
+      this.inventoryRepository.countDocuments({ retailerId: retailer._id }),
+    ]);
+
+    return {
+      meta: { page, limit, total, totalInventory },
+      data: items.map((item) => this.formatForStaffSearch(item)),
+    };
+  }
+
+  private scoreGuidedMatch(item: Record<string, any>, dto: GuidedDiscoveryDto) {
+    let score = 0;
+    const reasons: string[] = [];
+    const strengthScale: Record<string, number> = {
+      mild: 1,
+      medium: 2,
+      full: 3,
+    };
+
+    if (dto.strength && item.strength) {
+      const wanted = strengthScale[dto.strength];
+      const actual = strengthScale[String(item.strength).toLowerCase()];
+      if (wanted !== undefined && actual !== undefined) {
+        const distance = Math.abs(wanted - actual);
+        if (distance === 0) {
+          score += 40;
+          reasons.push(`matches your ${dto.strength} strength preference`);
+        } else if (distance === 1) {
+          score += 20;
+          reasons.push(
+            `close to your ${dto.strength} strength preference (${item.strength})`,
+          );
+        }
+      }
+    }
+
+    if (dto.minBudget !== undefined || dto.maxBudget !== undefined) {
+      const price = item.price as number;
+      const withinBudget =
+        (dto.minBudget === undefined || price >= dto.minBudget) &&
+        (dto.maxBudget === undefined || price <= dto.maxBudget);
+      if (withinBudget) {
+        score += 30;
+        reasons.push('within your budget');
+      } else if (dto.maxBudget !== undefined && price <= dto.maxBudget * 1.2) {
+        score += 15;
+        reasons.push('slightly over budget but close');
+      }
+    }
+
+    if (dto.wrapperPreference) {
+      const wrapper = String(
+        item.wrapper || item.masterCigarId?.wrapper || '',
+      ).toLowerCase();
+      if (wrapper.includes(dto.wrapperPreference.toLowerCase())) {
+        score += 15;
+        reasons.push(`${dto.wrapperPreference} wrapper as requested`);
+      }
+    }
+
+    if (dto.smokingTime) {
+      const masterSmokingTime: string | undefined =
+        item.masterCigarId?.smokingTime;
+      const match = masterSmokingTime?.match(/\d+/);
+      if (match) {
+        const actualMinutes = Number(match[0]);
+        const wantedMinutes =
+          dto.smokingTime === '120+' ? 120 : Number(dto.smokingTime);
+        const distance = Math.abs(actualMinutes - wantedMinutes);
+        if (distance <= 15) {
+          score += 10;
+          reasons.push('fits the smoking time you asked for');
+        } else if (distance <= 30) {
+          score += 5;
+        }
+      }
+    }
+
+    if (dto.preference === NewOrFamiliarPreference.FAMILIAR) {
+      if (item.isStaffPick || (item.totalSearches ?? 0) > 0) {
+        score += 10;
+        reasons.push('a popular pick other customers already love');
+      }
+    } else if (dto.preference === NewOrFamiliarPreference.NEW) {
+      if (item.isNewArrival) {
+        score += 10;
+        reasons.push('newly arrived - something different to try');
+      }
+    }
+
+    return { score, reasons };
+  }
+
+  async guidedDiscoverySearch(userId: string, dto: GuidedDiscoveryDto) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const candidates = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+      })
+      .populate('humidorId', 'name')
+      .populate('masterCigarId', 'wrapper smokingTime flavorNotes')
+      .lean();
+
+    const ranked = candidates
+      .map((item) => ({ item, ...this.scoreGuidedMatch(item, dto) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, dto.limit ?? 5);
+
+    const labels = ['Best Match', 'Great Choice', 'Alternative Option'];
+
+    return ranked.map(({ item, reasons }, index) => ({
+      rank: index + 1,
+      label: labels[index] ?? 'Alternative Option',
+      ...this.formatForStaffSearch(item),
+      matchReason:
+        reasons.length > 0
+          ? `Recommended because it's ${reasons.join(' and ')}`
+          : 'A solid option from current inventory',
+    }));
+  }
+
+  async getCustomerViewDetail(userId: string, id: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const item = await this.inventoryRepository
+      .findOne({ _id: id, retailerId: retailer._id })
+      .populate('humidorId', 'name')
+      .populate('masterCigarId', 'flavorNotes smokingTime whyYoullLikeThis')
+      .lean();
+    if (!item) throw new HttpException('Inventory not found', 404);
+
+    const anyItem = item as Record<string, any>;
+    const master = anyItem.masterCigarId;
+    const today = this.startOfDay(new Date());
+    const isFeaturedToday =
+      anyItem.isDailyFeatured &&
+      anyItem.featuredDate &&
+      new Date(anyItem.featuredDate as string).getTime() === today.getTime();
+
+    const displayPrice = isFeaturedToday
+      ? (anyItem.featuredPrice ?? anyItem.price)
+      : anyItem.isOnDiscount
+        ? anyItem.discountPrice
+        : anyItem.price;
+
+    const recommendationNote =
+      anyItem.staffPickNote ||
+      (isFeaturedToday ? anyItem.featuredNote : undefined) ||
+      anyItem.newArrivalNote ||
+      master?.whyYoullLikeThis;
+
+    return {
+      _id: anyItem._id,
+      name: anyItem.name,
+      brand: anyItem.brand,
+      strength: anyItem.strength,
+      wrapper: anyItem.wrapper,
+      size: anyItem.size,
+      image: anyItem.image,
+      description: anyItem.description,
+      flavorNotes: master?.flavorNotes,
+      smokingTime: master?.smokingTime,
+      price: anyItem.price,
+      displayPrice,
+      isOnDiscount: anyItem.isOnDiscount,
+      isFeaturedToday,
+      recommendationNote,
+      location: {
+        humidorName:
+          anyItem.humidorId && typeof anyItem.humidorId === 'object'
+            ? anyItem.humidorId.name
+            : undefined,
+        shelfName: anyItem.shelfName,
+      },
+      quantity: anyItem.quantity,
+      inStock: anyItem.quantity > 0,
+    };
+  }
+
+  async generateCustomerShareLink(userId: string, id: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const item = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!item) throw new HttpException('Inventory not found', 404);
+
+    const targetUrl = buildProductQrTarget(retailer.storeSlug, id);
+    const { url: qrCodeUrl } = await generateAndUploadQrCode(targetUrl);
+
+    return { url: targetUrl, qrCodeUrl };
   }
 }

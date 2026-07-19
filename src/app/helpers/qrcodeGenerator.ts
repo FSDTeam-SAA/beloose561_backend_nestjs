@@ -5,6 +5,11 @@ import { fileUpload } from './fileUploder';
 export const buildStoreQrTarget = (storeSlug: string): string =>
   `${config.frontendUrl}/store/${storeSlug}`;
 
+export const buildProductQrTarget = (
+  storeSlug: string,
+  inventoryId: string,
+): string => `${config.frontendUrl}/store/${storeSlug}/product/${inventoryId}`;
+
 export const generateAndUploadQrCode = async (
   data: string,
 ): Promise<{ url: string; public_id: string }> => {
