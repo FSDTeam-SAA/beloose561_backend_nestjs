@@ -89,6 +89,18 @@ export class Inventory {
   @Prop()
   arrivalDate!: Date;
 
+  @Prop()
+  newArrivalNote!: string;
+  // "Just arrived from Davidoff. Limited quantity available."
+
+  @Prop({ default: 30 })
+  autoRemoveDays!: number;
+  // 7 / 14 / 30 days
+
+  @Prop()
+  newArrivalExpiresAt!: Date;
+  // arrivalDate + autoRemoveDays, checked by the nightly cron
+
   @Prop({ default: false })
   isDailyFeatured!: boolean;
 

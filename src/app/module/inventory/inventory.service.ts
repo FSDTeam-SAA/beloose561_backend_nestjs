@@ -19,7 +19,9 @@ import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
+import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { UpdateNewArrivalDto } from './dto/update-new-arrival.dto';
 import { UpdateStaffPickDto } from './dto/update-staff-pick.dto';
 import { Inventory, InventoryDocument } from './entities/inventory.entity';
 
@@ -54,8 +56,25 @@ export class InventoryService {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
       createInventoryDto.image = uploadedFile.url;
     }
+
+    const newArrivalFields = createInventoryDto.isNewArrival
+      ? {
+          arrivalDate: createInventoryDto.arrivalDate
+            ? new Date(createInventoryDto.arrivalDate)
+            : new Date(),
+          autoRemoveDays: 30,
+          newArrivalExpiresAt: this.computeNewArrivalExpiry(
+            createInventoryDto.arrivalDate
+              ? new Date(createInventoryDto.arrivalDate)
+              : new Date(),
+            30,
+          ),
+        }
+      : {};
+
     const inventory = await this.inventoryRepository.create({
       ...createInventoryDto,
+      ...newArrivalFields,
       userId: user._id,
       retailerId: retailer._id,
       humidorId: humidor._id,
@@ -487,5 +506,168 @@ export class InventoryService {
     );
 
     return { count: data.length, data, groupedByStaff };
+  }
+
+  private computeNewArrivalExpiry(arrivalDate: Date, autoRemoveDays: number) {
+    const expiresAt = new Date(arrivalDate);
+    expiresAt.setDate(expiresAt.getDate() + autoRemoveDays);
+    return expiresAt;
+  }
+
+  private formatNewArrival(item: Record<string, any>) {
+    const humidor = item.humidorId;
+    const arrivalDate: Date | null = item.arrivalDate
+      ? new Date(item.arrivalDate as string)
+      : null;
+    const daysShowing = arrivalDate
+      ? Math.floor((Date.now() - arrivalDate.getTime()) / 86400000)
+      : null;
+
+    return {
+      _id: item._id,
+      name: item.name,
+      brand: item.brand,
+      strength: item.strength,
+      size: item.size,
+      image: item.image,
+      price: item.price,
+      quantity: item.quantity,
+      newArrivalNote: item.newArrivalNote,
+      arrivalDate: item.arrivalDate,
+      daysShowing,
+      autoRemoveDays: item.autoRemoveDays,
+      newArrivalExpiresAt: item.newArrivalExpiresAt,
+      shelfName: item.shelfName,
+      humidorName:
+        humidor && typeof humidor === 'object' ? humidor.name : undefined,
+    };
+  }
+
+  async markNewArrival(id: string, dto: MarkNewArrivalDto) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+
+    const arrivalDate = dto.arrivalDate
+      ? new Date(dto.arrivalDate)
+      : new Date();
+    const autoRemoveDays = dto.autoRemoveDays ?? 30;
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      {
+        isNewArrival: true,
+        arrivalDate,
+        newArrivalNote: dto.note,
+        autoRemoveDays,
+        newArrivalExpiresAt: this.computeNewArrivalExpiry(
+          arrivalDate,
+          autoRemoveDays,
+        ),
+      },
+      { new: true },
+    );
+    return result;
+  }
+
+  async updateNewArrival(id: string, dto: UpdateNewArrivalDto) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+    if (!inventory.isNewArrival)
+      throw new HttpException('This item is not a New Arrival', 400);
+
+    const arrivalDate = dto.arrivalDate
+      ? new Date(dto.arrivalDate)
+      : inventory.arrivalDate;
+    const autoRemoveDays = dto.autoRemoveDays ?? inventory.autoRemoveDays;
+
+    const update: Record<string, unknown> = {
+      newArrivalExpiresAt: this.computeNewArrivalExpiry(
+        arrivalDate,
+        autoRemoveDays,
+      ),
+    };
+    if (dto.arrivalDate !== undefined) update.arrivalDate = arrivalDate;
+    if (dto.autoRemoveDays !== undefined)
+      update.autoRemoveDays = autoRemoveDays;
+    if (dto.note !== undefined) update.newArrivalNote = dto.note;
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      update,
+      { new: true },
+    );
+    return result;
+  }
+
+  async removeNewArrival(id: string) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+    if (!inventory.isNewArrival)
+      throw new HttpException('This item is not a New Arrival', 400);
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      {
+        isNewArrival: false,
+        $unset: {
+          newArrivalNote: '',
+          newArrivalExpiresAt: '',
+        },
+      },
+      { new: true },
+    );
+    return result;
+  }
+
+  async getMyNewArrivals(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const items = await this.inventoryRepository
+      .find({ retailerId: retailer._id, isNewArrival: true })
+      .populate('humidorId', 'name')
+      .sort({ arrivalDate: -1 })
+      .lean();
+
+    const data = items.map((item) => this.formatNewArrival(item));
+    return { count: data.length, data };
+  }
+
+  async getNewArrivalsByStore(shopSlug: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const items = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        isNewArrival: true,
+        status: 'active',
+        quantity: { $gt: 0 },
+      })
+      .populate('humidorId', 'name')
+      .sort({ arrivalDate: -1 })
+      .lean();
+
+    const data = items.map((item) => this.formatNewArrival(item));
+    const today: typeof data = [];
+    const thisWeek: typeof data = [];
+    const thisMonth: typeof data = [];
+
+    for (const item of data) {
+      if (item.daysShowing === 0) today.push(item);
+      else if (item.daysShowing !== null && item.daysShowing <= 7)
+        thisWeek.push(item);
+      else thisMonth.push(item);
+    }
+
+    return {
+      count: data.length,
+      data,
+      groupedByRecency: { today, thisWeek, thisMonth },
+    };
   }
 }

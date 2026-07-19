@@ -31,7 +31,9 @@ import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
+import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { UpdateNewArrivalDto } from './dto/update-new-arrival.dto';
 import { UpdateStaffPickDto } from './dto/update-staff-pick.dto';
 import { InventoryService } from './inventory.service';
 
@@ -168,6 +170,20 @@ export class InventoryController {
     };
   }
 
+  @Get('/new-arrivals/my')
+  @ApiOperation({ summary: 'Get my retailer current New Arrivals' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getMyNewArrivals(@Req() req: Request) {
+    const result = await this.inventoryService.getMyNewArrivals(req.user!.id);
+
+    return {
+      message: 'New arrivals retrieved successfully',
+      data: result,
+    };
+  }
+
   @Get('/')
   @ApiOperation({ summary: 'Get all admin inventory list' })
   @ApiBearerAuth('access-token')
@@ -295,6 +311,20 @@ export class InventoryController {
 
     return {
       message: 'Staff picks retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get(':slug/new-arrivals')
+  @ApiOperation({
+    summary: "Customer App - get a store's New Arrivals (public)",
+  })
+  @HttpCode(HttpStatus.OK)
+  async getNewArrivalsByStore(@Param('slug') slug: string) {
+    const result = await this.inventoryService.getNewArrivalsByStore(slug);
+
+    return {
+      message: 'New arrivals retrieved successfully',
       data: result,
     };
   }
@@ -494,6 +524,62 @@ export class InventoryController {
 
     return {
       message: 'Staff pick removed successfully',
+      data: result,
+    };
+  }
+
+  @Post(':id/new-arrival')
+  @ApiOperation({ summary: 'Mark as New Arrival' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async markNewArrival(
+    @Param('id') id: string,
+    @Body() markNewArrivalDto: MarkNewArrivalDto,
+  ) {
+    const result = await this.inventoryService.markNewArrival(
+      id,
+      markNewArrivalDto,
+    );
+
+    return {
+      message: 'Marked as new arrival successfully',
+      data: result,
+    };
+  }
+
+  @Patch(':id/new-arrival')
+  @ApiOperation({
+    summary: 'Edit New Arrival - arrival date / note / auto-remove days',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async updateNewArrival(
+    @Param('id') id: string,
+    @Body() updateNewArrivalDto: UpdateNewArrivalDto,
+  ) {
+    const result = await this.inventoryService.updateNewArrival(
+      id,
+      updateNewArrivalDto,
+    );
+
+    return {
+      message: 'New arrival updated successfully',
+      data: result,
+    };
+  }
+
+  @Delete(':id/new-arrival')
+  @ApiOperation({ summary: 'Remove New Arrival' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async removeNewArrival(@Param('id') id: string) {
+    const result = await this.inventoryService.removeNewArrival(id);
+
+    return {
+      message: 'New arrival removed successfully',
       data: result,
     };
   }
