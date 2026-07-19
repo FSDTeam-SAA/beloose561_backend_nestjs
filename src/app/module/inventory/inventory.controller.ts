@@ -32,6 +32,8 @@ import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
+import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
+import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { UpdateNewArrivalDto } from './dto/update-new-arrival.dto';
 import { UpdateStaffPickDto } from './dto/update-staff-pick.dto';
@@ -184,6 +186,38 @@ export class InventoryController {
     };
   }
 
+  @Get('/daily-featured/my')
+  @ApiOperation({
+    summary: "Get my retailer Today's Featured + Tomorrow's planned",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getMyDailyFeatured(@Req() req: Request) {
+    const result = await this.inventoryService.getMyDailyFeatured(req.user!.id);
+
+    return {
+      message: 'Daily featured retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Delete('/daily-featured/my/clear')
+  @ApiOperation({ summary: "🗑️ Clear All Featured - today's items only" })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async clearAllDailyFeaturedToday(@Req() req: Request) {
+    const result = await this.inventoryService.clearAllDailyFeaturedToday(
+      req.user!.id,
+    );
+
+    return {
+      message: 'All featured cleared successfully',
+      data: result,
+    };
+  }
+
   @Get('/')
   @ApiOperation({ summary: 'Get all admin inventory list' })
   @ApiBearerAuth('access-token')
@@ -325,6 +359,20 @@ export class InventoryController {
 
     return {
       message: 'New arrivals retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get(':slug/daily-featured')
+  @ApiOperation({
+    summary: "Customer App - get a store's Today's Featured (public)",
+  })
+  @HttpCode(HttpStatus.OK)
+  async getDailyFeaturedByStore(@Param('slug') slug: string) {
+    const result = await this.inventoryService.getDailyFeaturedByStore(slug);
+
+    return {
+      message: 'Daily featured retrieved successfully',
       data: result,
     };
   }
@@ -580,6 +628,62 @@ export class InventoryController {
 
     return {
       message: 'New arrival removed successfully',
+      data: result,
+    };
+  }
+
+  @Post(':id/daily-featured')
+  @ApiOperation({ summary: 'Set as Daily Featured (today / tomorrow)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async setDailyFeatured(
+    @Param('id') id: string,
+    @Body() setDailyFeaturedDto: SetDailyFeaturedDto,
+  ) {
+    const result = await this.inventoryService.setDailyFeatured(
+      id,
+      setDailyFeaturedDto,
+    );
+
+    return {
+      message: 'Set as daily featured successfully',
+      data: result,
+    };
+  }
+
+  @Patch(':id/daily-featured')
+  @ApiOperation({
+    summary: 'Edit Daily Featured - date / note / featured price',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async updateDailyFeatured(
+    @Param('id') id: string,
+    @Body() updateDailyFeaturedDto: UpdateDailyFeaturedDto,
+  ) {
+    const result = await this.inventoryService.updateDailyFeatured(
+      id,
+      updateDailyFeaturedDto,
+    );
+
+    return {
+      message: 'Daily featured updated successfully',
+      data: result,
+    };
+  }
+
+  @Delete(':id/daily-featured')
+  @ApiOperation({ summary: 'Remove / Cancel Daily Featured' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async removeDailyFeatured(@Param('id') id: string) {
+    const result = await this.inventoryService.removeDailyFeatured(id);
+
+    return {
+      message: 'Daily featured removed successfully',
       data: result,
     };
   }

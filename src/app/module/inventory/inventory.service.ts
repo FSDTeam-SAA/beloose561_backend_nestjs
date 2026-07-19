@@ -20,6 +20,8 @@ import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
+import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
+import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { UpdateNewArrivalDto } from './dto/update-new-arrival.dto';
 import { UpdateStaffPickDto } from './dto/update-staff-pick.dto';
@@ -72,9 +74,14 @@ export class InventoryService {
         }
       : {};
 
+    const dailyFeaturedFields = createInventoryDto.isDailyFeatured
+      ? { featuredDate: this.startOfDay(new Date()) }
+      : {};
+
     const inventory = await this.inventoryRepository.create({
       ...createInventoryDto,
       ...newArrivalFields,
+      ...dailyFeaturedFields,
       userId: user._id,
       retailerId: retailer._id,
       humidorId: humidor._id,
@@ -343,7 +350,11 @@ export class InventoryService {
             staffPickBy: dto.staffPickBy,
             staffPickAddedAt: new Date(),
           }
-        : { isDailyFeatured: true, featuredNote: dto.note };
+        : {
+            isDailyFeatured: true,
+            featuredNote: dto.note,
+            featuredDate: this.startOfDay(new Date()),
+          };
 
     const result = await this.inventoryRepository.findByIdAndUpdate(
       id,
@@ -669,5 +680,174 @@ export class InventoryService {
       data,
       groupedByRecency: { today, thisWeek, thisMonth },
     };
+  }
+
+  private startOfDay(date: Date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private formatDailyFeatured(item: Record<string, any>) {
+    const humidor = item.humidorId;
+    const featuredPrice = item.featuredPrice;
+    return {
+      _id: item._id,
+      name: item.name,
+      brand: item.brand,
+      strength: item.strength,
+      size: item.size,
+      wrapper: item.wrapper,
+      image: item.image,
+      price: item.price,
+      quantity: item.quantity,
+      description: item.description,
+      featuredNote: item.featuredNote,
+      featuredDate: item.featuredDate,
+      featuredPrice,
+      saving:
+        typeof featuredPrice === 'number'
+          ? Number((item.price - featuredPrice).toFixed(2))
+          : undefined,
+      shelfName: item.shelfName,
+      humidorName:
+        humidor && typeof humidor === 'object' ? humidor.name : undefined,
+    };
+  }
+
+  async setDailyFeatured(id: string, dto: SetDailyFeaturedDto) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+
+    const featuredDate = this.startOfDay(
+      dto.featuredDate ? new Date(dto.featuredDate) : new Date(),
+    );
+
+    const update: Record<string, unknown> = {
+      isDailyFeatured: true,
+      featuredDate,
+      featuredNote: dto.note,
+    };
+    if (dto.featuredPrice !== undefined) {
+      update.featuredPrice = dto.featuredPrice;
+    } else {
+      update.$unset = { featuredPrice: '' };
+    }
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      update,
+      { new: true },
+    );
+    return result;
+  }
+
+  async updateDailyFeatured(id: string, dto: UpdateDailyFeaturedDto) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+    if (!inventory.isDailyFeatured)
+      throw new HttpException('This item is not featured today', 400);
+
+    const update: Record<string, unknown> = {};
+    if (dto.featuredDate !== undefined)
+      update.featuredDate = this.startOfDay(new Date(dto.featuredDate));
+    if (dto.note !== undefined) update.featuredNote = dto.note;
+    if (dto.featuredPrice !== undefined)
+      update.featuredPrice = dto.featuredPrice;
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      update,
+      { new: true },
+    );
+    return result;
+  }
+
+  async removeDailyFeatured(id: string) {
+    const inventory = await this.inventoryRepository.findById(id);
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+    if (!inventory.isDailyFeatured)
+      throw new HttpException('This item is not featured today', 400);
+
+    const result = await this.inventoryRepository.findByIdAndUpdate(
+      id,
+      {
+        isDailyFeatured: false,
+        $unset: { featuredNote: '', featuredDate: '', featuredPrice: '' },
+      },
+      { new: true },
+    );
+    return result;
+  }
+
+  async clearAllDailyFeaturedToday(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const today = this.startOfDay(new Date());
+    const result = await this.inventoryRepository.updateMany(
+      { retailerId: retailer._id, isDailyFeatured: true, featuredDate: today },
+      {
+        isDailyFeatured: false,
+        $unset: { featuredNote: '', featuredDate: '', featuredPrice: '' },
+      },
+    );
+    return { cleared: result.modifiedCount };
+  }
+
+  async getMyDailyFeatured(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const today = this.startOfDay(new Date());
+    const tomorrow = this.startOfDay(
+      new Date(today.getTime() + 24 * 60 * 60 * 1000),
+    );
+
+    const items = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        isDailyFeatured: true,
+        featuredDate: { $in: [today, tomorrow] },
+      })
+      .populate('humidorId', 'name')
+      .sort({ featuredDate: 1 })
+      .lean();
+
+    const data = items.map((item) => this.formatDailyFeatured(item));
+    const isToday = (item: (typeof data)[number]) =>
+      item.featuredDate &&
+      new Date(item.featuredDate as string).getTime() === today.getTime();
+
+    return {
+      today: data.filter((item) => isToday(item)),
+      tomorrow: data.filter((item) => !isToday(item)),
+    };
+  }
+
+  async getDailyFeaturedByStore(shopSlug: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const today = this.startOfDay(new Date());
+    const items = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        isDailyFeatured: true,
+        featuredDate: today,
+        status: 'active',
+        quantity: { $gt: 0 },
+      })
+      .populate('humidorId', 'name')
+      .lean();
+
+    const data = items.map((item) => this.formatDailyFeatured(item));
+    return { count: data.length, data };
   }
 }

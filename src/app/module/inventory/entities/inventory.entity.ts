@@ -107,6 +107,14 @@ export class Inventory {
   @Prop()
   featuredNote!: string;
 
+  @Prop()
+  featuredDate!: Date;
+  // Day this item is/was "Today's Featured" for - cleared by the midnight cron
+
+  @Prop({ min: 0 })
+  featuredPrice!: number;
+  // Optional special price while featured (separate from a regular discount)
+
   // Status
   @Prop({
     enum: ['active', 'under_review', 'out_of_stock', 'inactive'],

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { DailyFeaturedExpiryCronService } from '../../helpers/dailyFeaturedExpiry.cron';
 import { NewArrivalExpiryCronService } from '../../helpers/newArrivalExpiry.cron';
 import { Humidor, HumidorSchema } from '../humidor/entities/humidor.entity';
 import {
@@ -23,6 +24,10 @@ import { InventoryService } from './inventory.service';
     ]),
   ],
   controllers: [InventoryController],
-  providers: [InventoryService, NewArrivalExpiryCronService],
+  providers: [
+    InventoryService,
+    NewArrivalExpiryCronService,
+    DailyFeaturedExpiryCronService,
+  ],
 })
 export class InventoryModule {}
