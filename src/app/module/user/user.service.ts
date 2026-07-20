@@ -108,11 +108,15 @@ export class UserService {
   }
 
   async updateMyProfile(
-    id: string,
+    userId: string,
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ) {
-    const user = await this.userModel.findById(id);
+    const isExist = await this.userModel.findById(userId);
+    if (!isExist) {
+      throw new HttpException('User not found', 404);
+    }
+    const user = await this.userModel.findById(userId);
     if (!user) {
       throw new HttpException('User not found', 404);
     }
@@ -120,9 +124,13 @@ export class UserService {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
       updateUserDto.profilePicture = uploadedFile.url;
     }
-    const result = await this.userModel.findByIdAndUpdate(id, updateUserDto, {
-      new: true,
-    });
+    const result = await this.userModel.findByIdAndUpdate(
+      userId,
+      updateUserDto,
+      {
+        new: true,
+      },
+    );
     return result;
   }
 }
