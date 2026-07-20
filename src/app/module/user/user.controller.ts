@@ -1,34 +1,34 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  UseInterceptors,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
-  UseGuards,
-  UploadedFile,
-  Req,
   Param,
+  Post,
   Put,
-  Delete,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { fileUpload } from 'src/app/helpers/fileUploder';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import AuthGuard from 'src/app/middlewares/auth.guard';
-import { ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { fileUpload } from 'src/app/helpers/fileUploder';
 import pick from 'src/app/helpers/pick';
+import AuthGuard from 'src/app/middlewares/auth.guard';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserService } from './user.service';
 
 @ApiTags('User')
 @Controller('user')
@@ -52,7 +52,7 @@ export class UserController {
         password: { type: 'string', example: '' },
         role: {
           type: 'string',
-          enum: ['user', 'admin'],
+          enum: ['retailer', 'customer', 'admin'],
         },
         gender: {
           type: 'string',
@@ -234,7 +234,7 @@ export class UserController {
     summary: 'Get the profile of the currently authenticated user',
   })
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin', 'user'))
+  @UseGuards(AuthGuard('retailer', 'customer', 'admin'))
   @HttpCode(HttpStatus.OK)
   async getProfile(@Req() req: Request) {
     const user = await this.userService.getProfile(req.user!.id);
@@ -250,7 +250,7 @@ export class UserController {
   })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
-  @UseGuards(AuthGuard('admin', 'user'))
+  @UseGuards(AuthGuard('retailer', 'customer', 'admin'))
   @UseInterceptors(FileInterceptor('profilePicture', fileUpload.uploadConfig))
   @ApiBody({ type: UpdateUserDto })
   @HttpCode(HttpStatus.OK)
