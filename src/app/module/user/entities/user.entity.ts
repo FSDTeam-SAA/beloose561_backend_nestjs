@@ -12,8 +12,14 @@ export class User {
   })
   fullName!: string;
 
-  // @Prop()
-  // businessName?: string;
+  @Prop({ trim: true })
+  firstName?: string;
+
+  @Prop({ trim: true })
+  lastName?: string;
+
+  @Prop()
+  businessName?: string;
 
   @Prop({
     required: [true, 'Email is required'],
@@ -47,6 +53,18 @@ export class User {
 
   @Prop()
   address!: string;
+
+  @Prop({ trim: true })
+  country?: string;
+
+  @Prop({ trim: true })
+  stateRegion?: string;
+
+  @Prop({ trim: true })
+  nationality?: string;
+
+  @Prop({ trim: true })
+  postcode?: string;
 
   @Prop()
   profilePicture!: string;

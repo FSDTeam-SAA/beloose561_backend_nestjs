@@ -90,6 +90,16 @@ export class RetailerController {
     };
   }
 
+  @Get('me')
+  @ApiOperation({ summary: 'Get my retailer profile' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getMyRetailer(@Req() req: Request) {
+    const result = await this.retailerService.getMyRetailer(req.user!.id);
+    return { message: 'Retailer retrieved successfully', data: result };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get retailer by id' })
   @ApiBearerAuth('access-token')

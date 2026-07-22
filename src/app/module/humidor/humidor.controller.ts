@@ -20,7 +20,7 @@ import {
 import type { Request } from 'express';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
-import { CreateHumidorDto } from './dto/create-humidor.dto';
+import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { HumidorService } from './humidor.service';
 
@@ -58,7 +58,7 @@ export class HumidorController {
   @ApiQuery({ name: 'location', required: false })
   @ApiQuery({ name: 'description', required: false })
   @ApiQuery({ name: 'shelfes', required: false })
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   async getMyAllHumidor(@Req() req: Request) {
     const filters = pick(req.query, [
       'searchTerm',
@@ -81,33 +81,55 @@ export class HumidorController {
     };
   }
 
+  @Post(':id/shelf')
+  @ApiOperation({ summary: 'Add a shelf to my Humidor' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async addShelf(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() shelf: HumidorShelfDto,
+  ) {
+    const result = await this.humidorService.addShelf(id, req.user!.id, shelf);
+    return { message: 'Shelf added successfully', data: result };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get Humidor by id' })
-  @HttpCode(HttpStatus.CREATED)
-  async getHumidorById(@Param('id') id: string) {
-    const result = await this.humidorService.getHumidorById(id);
-    return result;
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getHumidorById(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.humidorService.getHumidorById(id, req.user!.id);
+    return { message: 'Humidor retrieved successfully', data: result };
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update Humidor by id' })
-  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
   async updateHumidorById(
     @Param('id') id: string,
+    @Req() req: Request,
     @Body() updateHumidorDto: UpdateHumidorDto,
   ) {
     const result = await this.humidorService.updateHumidor(
       id,
+      req.user!.id,
       updateHumidorDto,
     );
-    return result;
+    return { message: 'Humidor updated successfully', data: result };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete Humidor by id' })
-  @HttpCode(HttpStatus.CREATED)
-  async deleteHumidorById(@Param('id') id: string) {
-    const result = await this.humidorService.deleteHumidor(id);
-    return result;
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async deleteHumidorById(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.humidorService.deleteHumidor(id, req.user!.id);
+    return { message: 'Humidor deleted successfully', data: result };
   }
 }

@@ -190,6 +190,7 @@ export class DashboardService {
       urgent,
       needsAttention,
       snapshot: {
+        totalProducts: insights.totalProducts,
         totalStock: insights.totalStock,
         totalSearches: insights.topSearched.reduce(
           (sum, item) => sum + item.searches,

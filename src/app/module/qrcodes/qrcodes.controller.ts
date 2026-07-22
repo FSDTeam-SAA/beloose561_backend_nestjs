@@ -5,10 +5,11 @@ import {
   HttpStatus,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import AuthGuard from '../../middlewares/auth.guard';
 import { QrcodesService } from './qrcodes.service';
 
@@ -29,6 +30,21 @@ export class QrcodesController {
       message: 'QR codes retrieved successfully',
       data: result,
     };
+  }
+
+  @Get('me/download')
+  @ApiOperation({ summary: 'Download my store QR code (retailer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async downloadMyQrcode(@Req() req: Request, @Res() res: Response) {
+    const file = await this.qrcodesService.downloadMyQrcode(req.user!.id);
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="beloose-store-qr.png"',
+    );
+    res.send(file.buffer);
   }
 
   @Get('me')

@@ -545,16 +545,19 @@ export class InventoryController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Edit inventory item' })
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.OK)
   async updateInventory(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateInventoryDto: UpdateInventoryDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     const result = await this.inventoryService.updateInventory(
+      req.user!.id,
       id,
       updateInventoryDto,
       file,
@@ -571,8 +574,11 @@ export class InventoryController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async deleteInventory(@Param('id') id: string) {
-    const result = await this.inventoryService.deleteInventory(id);
+  async deleteInventory(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.inventoryService.deleteInventory(
+      req.user!.id,
+      id,
+    );
 
     return {
       message: 'Inventory deleted successfully',
@@ -670,10 +676,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.CREATED)
   async addStaffPick(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() addStaffPickDto: AddStaffPickDto,
   ) {
     const result = await this.inventoryService.addStaffPick(
+      req.user!.id,
       id,
       addStaffPickDto,
     );
@@ -690,10 +698,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
   async updateStaffPick(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateStaffPickDto: UpdateStaffPickDto,
   ) {
     const result = await this.inventoryService.updateStaffPick(
+      req.user!.id,
       id,
       updateStaffPickDto,
     );
@@ -709,8 +719,11 @@ export class InventoryController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async removeStaffPick(@Param('id') id: string) {
-    const result = await this.inventoryService.removeStaffPick(id);
+  async removeStaffPick(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.inventoryService.removeStaffPick(
+      req.user!.id,
+      id,
+    );
 
     return {
       message: 'Staff pick removed successfully',
@@ -724,10 +737,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.CREATED)
   async markNewArrival(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() markNewArrivalDto: MarkNewArrivalDto,
   ) {
     const result = await this.inventoryService.markNewArrival(
+      req.user!.id,
       id,
       markNewArrivalDto,
     );
@@ -746,10 +761,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
   async updateNewArrival(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateNewArrivalDto: UpdateNewArrivalDto,
   ) {
     const result = await this.inventoryService.updateNewArrival(
+      req.user!.id,
       id,
       updateNewArrivalDto,
     );
@@ -765,8 +782,11 @@ export class InventoryController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async removeNewArrival(@Param('id') id: string) {
-    const result = await this.inventoryService.removeNewArrival(id);
+  async removeNewArrival(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.inventoryService.removeNewArrival(
+      req.user!.id,
+      id,
+    );
 
     return {
       message: 'New arrival removed successfully',
@@ -780,10 +800,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.CREATED)
   async setDailyFeatured(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() setDailyFeaturedDto: SetDailyFeaturedDto,
   ) {
     const result = await this.inventoryService.setDailyFeatured(
+      req.user!.id,
       id,
       setDailyFeaturedDto,
     );
@@ -802,10 +824,12 @@ export class InventoryController {
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
   async updateDailyFeatured(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateDailyFeaturedDto: UpdateDailyFeaturedDto,
   ) {
     const result = await this.inventoryService.updateDailyFeatured(
+      req.user!.id,
       id,
       updateDailyFeaturedDto,
     );
@@ -821,8 +845,11 @@ export class InventoryController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async removeDailyFeatured(@Param('id') id: string) {
-    const result = await this.inventoryService.removeDailyFeatured(id);
+  async removeDailyFeatured(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.inventoryService.removeDailyFeatured(
+      req.user!.id,
+      id,
+    );
 
     return {
       message: 'Daily featured removed successfully',

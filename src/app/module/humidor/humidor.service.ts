@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
@@ -9,7 +9,7 @@ import {
   RetailerDocument,
 } from '../retailer/entities/retailer.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
-import { CreateHumidorDto } from './dto/create-humidor.dto';
+import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { Humidor, HumidorDocument } from './entities/humidor.entity';
 
@@ -74,17 +74,39 @@ export class HumidorService {
     };
   }
 
-  async getHumidorById(id: string) {
-    const result = await this.humidorModel.findById(id);
+  async getHumidorById(id: string, userId: string) {
+    const result = await this.humidorModel.findOne({ _id: id, userId });
     if (!result) {
       throw new HttpException('Humidor not found', 404);
     }
     return result;
   }
 
-  async updateHumidor(id: string, updateHumidorDto: UpdateHumidorDto) {
-    const result = await this.humidorModel.findByIdAndUpdate(
-      id,
+  async addShelf(id: string, userId: string, shelf: HumidorShelfDto) {
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId },
+      {
+        $push: {
+          shelfes: {
+            _id: new Types.ObjectId(),
+            ...shelf,
+            cigarCount: 0,
+          },
+        },
+      },
+      { new: true },
+    );
+    if (!result) throw new HttpException('Humidor not found', 404);
+    return result;
+  }
+
+  async updateHumidor(
+    id: string,
+    userId: string,
+    updateHumidorDto: UpdateHumidorDto,
+  ) {
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId },
       updateHumidorDto,
       { new: true },
     );
@@ -94,8 +116,11 @@ export class HumidorService {
     return result;
   }
 
-  async deleteHumidor(id: string) {
-    const result = await this.humidorModel.findByIdAndDelete(id);
+  async deleteHumidor(id: string, userId: string) {
+    const result = await this.humidorModel.findOneAndDelete({
+      _id: id,
+      userId,
+    });
     if (!result) {
       throw new HttpException('Humidor not found', 404);
     }

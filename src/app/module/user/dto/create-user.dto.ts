@@ -19,6 +19,18 @@ export class CreateUserDto {
   @IsString()
   fullName!: string;
 
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
   @ApiProperty({ example: '' })
   @Transform(emptyStringToUndefined)
   @IsString()
@@ -64,6 +76,30 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  stateRegion?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  nationality?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @Transform(emptyStringToUndefined)
+  @IsOptional()
+  @IsString()
+  postcode?: string;
 
   @ApiPropertyOptional({ example: '' })
   @Transform(emptyStringToUndefined)

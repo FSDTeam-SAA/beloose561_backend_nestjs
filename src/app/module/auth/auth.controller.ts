@@ -97,7 +97,7 @@ export class AuthController {
   }
 
   @Post('change-password')
-  @UseGuards(AuthGuard('user', 'admin'))
+  @UseGuards(AuthGuard('retailer', 'customer', 'admin'))
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Change password for logged in user' })
   @ApiBody({ type: ChangePasswordDto })
@@ -106,7 +106,6 @@ export class AuthController {
     @Body() CreateAuthDto: ChangePasswordDto,
     @Req() req: Request,
   ) {
-    console.log(req.user!.id);
     const result = await this.authService.changePassword(
       req.user!.id,
       CreateAuthDto.oldPassword,

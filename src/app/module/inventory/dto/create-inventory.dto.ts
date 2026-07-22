@@ -32,6 +32,14 @@ const ToBoolean = () =>
 
 export class CreateInventoryDto {
   @ApiPropertyOptional({
+    description: 'Approved master database cigar id used to prefill product data',
+  })
+  @IsOptional()
+  @EmptyToUndefined()
+  @IsMongoId()
+  masterCigarId?: string;
+
+  @ApiPropertyOptional({
     example: 'Padron 1964 Natural Toro',
   })
   @IsOptional()

@@ -61,12 +61,49 @@ export class InventoryService {
     if (!user) throw new HttpException('User not found', 404);
     const retailer = await this.retailerModel.findOne({ userId: user._id });
     if (!retailer) throw new HttpException('Retailer not found', 404);
-    const humidor = await this.humidorModel.findOne({ userId: user._id });
+    const humidor = await this.humidorModel.findOne({
+      _id: createInventoryDto.humidorId,
+      userId: user._id,
+      retailerId: retailer._id,
+    });
     if (!humidor) throw new HttpException('Humidor not found', 404);
+    if (
+      !humidor.shelfes.some(
+        (shelf) => shelf.name === createInventoryDto.shelfName,
+      )
+    )
+      throw new HttpException('Shelf not found in selected humidor', 404);
+
+    const masterCigar = createInventoryDto.masterCigarId
+      ? await this.masterDatabaseModel.findOne({
+          _id: createInventoryDto.masterCigarId,
+          status: 'approved',
+        })
+      : null;
+    if (createInventoryDto.masterCigarId && !masterCigar)
+      throw new HttpException('Approved master cigar not found', 404);
+
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
       createInventoryDto.image = uploadedFile.url;
     }
+
+    const masterFields = masterCigar
+      ? {
+          masterCigarId: masterCigar._id,
+          name: masterCigar.name,
+          brand: masterCigar.brand,
+          strength: masterCigar.strength,
+          wrapper: masterCigar.wrapper,
+          size: masterCigar.size,
+          image: masterCigar.image,
+          description: masterCigar.description,
+        }
+      : {};
+
+    const staffPickFields = createInventoryDto.isStaffPick
+      ? { staffPickAddedAt: new Date() }
+      : {};
 
     const newArrivalFields = createInventoryDto.isNewArrival
       ? {
@@ -89,12 +126,14 @@ export class InventoryService {
 
     const inventory = await this.inventoryRepository.create({
       ...createInventoryDto,
+      ...masterFields,
+      ...staffPickFields,
       ...newArrivalFields,
       ...dailyFeaturedFields,
       userId: user._id,
       retailerId: retailer._id,
       humidorId: humidor._id,
-      status: 'under_review',
+      status: masterCigar ? 'active' : 'under_review',
     });
     return inventory;
   }
@@ -247,27 +286,83 @@ export class InventoryService {
   }
 
   async updateInventory(
+    userId: string,
     id: string,
     updateInventoryDto: UpdateInventoryDto,
     file?: Express.Multer.File,
   ) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+    const inventory = await this.getOwnedInventory(userId, id);
+    if (updateInventoryDto.humidorId || updateInventoryDto.shelfName) {
+      const humidor = await this.humidorModel.findOne({
+        _id: updateInventoryDto.humidorId ?? inventory.humidorId,
+        userId: inventory.userId,
+        retailerId: inventory.retailerId,
+      });
+      if (!humidor) throw new HttpException('Humidor not found', 404);
+      const shelfName = updateInventoryDto.shelfName ?? inventory.shelfName;
+      if (!humidor.shelfes.some((shelf) => shelf.name === shelfName))
+        throw new HttpException('Shelf not found in selected humidor', 404);
+    }
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
       updateInventoryDto.image = uploadedFile.url;
     }
+    const update: Record<string, unknown> = { ...updateInventoryDto };
+    const unset: Record<string, string> = {};
+    if (updateInventoryDto.isStaffPick === true && !inventory.isStaffPick)
+      update.staffPickAddedAt = new Date();
+    if (updateInventoryDto.isStaffPick === false) {
+      delete update.staffPickBy;
+      delete update.staffPickNote;
+      unset.staffPickBy = '';
+      unset.staffPickNote = '';
+      unset.staffPickAddedAt = '';
+    }
+    if (updateInventoryDto.isNewArrival === true) {
+      const arrivalDate = updateInventoryDto.arrivalDate
+        ? new Date(updateInventoryDto.arrivalDate)
+        : (inventory.arrivalDate ?? new Date());
+      if (updateInventoryDto.arrivalDate || !inventory.isNewArrival) {
+        const autoRemoveDays = inventory.autoRemoveDays ?? 30;
+        update.arrivalDate = arrivalDate;
+        update.autoRemoveDays = autoRemoveDays;
+        update.newArrivalExpiresAt = this.computeNewArrivalExpiry(
+          arrivalDate,
+          autoRemoveDays,
+        );
+      }
+    }
+    if (updateInventoryDto.isNewArrival === false) {
+      delete update.arrivalDate;
+      unset.arrivalDate = '';
+      unset.newArrivalNote = '';
+      unset.autoRemoveDays = '';
+      unset.newArrivalExpiresAt = '';
+    }
+    if (
+      updateInventoryDto.isDailyFeatured === true &&
+      !inventory.isDailyFeatured
+    )
+      update.featuredDate = this.startOfDay(new Date());
+    if (updateInventoryDto.isDailyFeatured === false) {
+      delete update.featuredNote;
+      unset.featuredNote = '';
+      unset.featuredDate = '';
+      unset.featuredPrice = '';
+    }
     const result = await this.inventoryRepository.findByIdAndUpdate(
       id,
-      updateInventoryDto,
+      {
+        $set: update,
+        ...(Object.keys(unset).length ? { $unset: unset } : {}),
+      },
       { new: true },
     );
     return result;
   }
 
-  async deleteInventory(id: string) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async deleteInventory(userId: string, id: string) {
+    await this.getOwnedInventory(userId, id);
     const result = await this.inventoryRepository.findByIdAndDelete(id);
     return result;
   }
@@ -429,9 +524,21 @@ export class InventoryService {
     };
   }
 
-  async addStaffPick(id: string, dto: AddStaffPickDto) {
-    const inventory = await this.inventoryRepository.findById(id);
+  private async getOwnedInventory(userId: string, id: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    const inventory = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
     if (!inventory) throw new HttpException('Inventory not found', 404);
+    return inventory;
+  }
+
+  async addStaffPick(userId: string, id: string, dto: AddStaffPickDto) {
+    await this.getOwnedInventory(userId, id);
 
     const result = await this.inventoryRepository.findByIdAndUpdate(
       id,
@@ -446,9 +553,8 @@ export class InventoryService {
     return result;
   }
 
-  async updateStaffPick(id: string, dto: UpdateStaffPickDto) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async updateStaffPick(userId: string, id: string, dto: UpdateStaffPickDto) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isStaffPick)
       throw new HttpException('This item is not a staff pick', 400);
 
@@ -465,9 +571,8 @@ export class InventoryService {
     return result;
   }
 
-  async removeStaffPick(id: string) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async removeStaffPick(userId: string, id: string) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isStaffPick)
       throw new HttpException('This item is not a staff pick', 400);
 
@@ -563,9 +668,8 @@ export class InventoryService {
     };
   }
 
-  async markNewArrival(id: string, dto: MarkNewArrivalDto) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async markNewArrival(userId: string, id: string, dto: MarkNewArrivalDto) {
+    await this.getOwnedInventory(userId, id);
 
     const arrivalDate = dto.arrivalDate
       ? new Date(dto.arrivalDate)
@@ -589,9 +693,8 @@ export class InventoryService {
     return result;
   }
 
-  async updateNewArrival(id: string, dto: UpdateNewArrivalDto) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async updateNewArrival(userId: string, id: string, dto: UpdateNewArrivalDto) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isNewArrival)
       throw new HttpException('This item is not a New Arrival', 400);
 
@@ -619,9 +722,8 @@ export class InventoryService {
     return result;
   }
 
-  async removeNewArrival(id: string) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async removeNewArrival(userId: string, id: string) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isNewArrival)
       throw new HttpException('This item is not a New Arrival', 400);
 
@@ -724,9 +826,8 @@ export class InventoryService {
     };
   }
 
-  async setDailyFeatured(id: string, dto: SetDailyFeaturedDto) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async setDailyFeatured(userId: string, id: string, dto: SetDailyFeaturedDto) {
+    await this.getOwnedInventory(userId, id);
 
     const featuredDate = this.startOfDay(
       dto.featuredDate ? new Date(dto.featuredDate) : new Date(),
@@ -751,9 +852,12 @@ export class InventoryService {
     return result;
   }
 
-  async updateDailyFeatured(id: string, dto: UpdateDailyFeaturedDto) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async updateDailyFeatured(
+    userId: string,
+    id: string,
+    dto: UpdateDailyFeaturedDto,
+  ) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isDailyFeatured)
       throw new HttpException('This item is not featured today', 400);
 
@@ -772,9 +876,8 @@ export class InventoryService {
     return result;
   }
 
-  async removeDailyFeatured(id: string) {
-    const inventory = await this.inventoryRepository.findById(id);
-    if (!inventory) throw new HttpException('Inventory not found', 404);
+  async removeDailyFeatured(userId: string, id: string) {
+    const inventory = await this.getOwnedInventory(userId, id);
     if (!inventory.isDailyFeatured)
       throw new HttpException('This item is not featured today', 400);
 
@@ -868,43 +971,53 @@ export class InventoryService {
     const retailer = await this.retailerModel.findOne({ userId: user._id });
     if (!retailer) throw new HttpException('Retailer not found', 404);
 
-    const [outOfStock, lowStock, underReview, topSearched, totalStockAgg] =
-      await Promise.all([
-        this.inventoryRepository
-          .find({ retailerId: retailer._id, status: 'active', quantity: 0 })
-          .select('name totalSearches')
-          .sort({ totalSearches: -1 })
-          .lean(),
-        this.inventoryRepository
-          .find({
-            retailerId: retailer._id,
-            status: 'active',
-            quantity: { $gt: 0 },
-            $expr: { $lte: ['$quantity', '$lowStockThreshold'] },
-          })
-          .select('name quantity lowStockThreshold')
-          .sort({ quantity: 1 })
-          .lean(),
-        this.inventoryRepository
-          .find({ retailerId: retailer._id, status: 'under_review' })
-          .select('name createdAt')
-          .sort({ createdAt: 1 })
-          .lean(),
-        this.inventoryRepository
-          .find({
-            retailerId: retailer._id,
-            status: 'active',
-            totalSearches: { $gt: 0 },
-          })
-          .select('name totalSearches quantity lowStockThreshold')
-          .sort({ totalSearches: -1 })
-          .limit(5)
-          .lean(),
-        this.inventoryRepository.aggregate([
-          { $match: { retailerId: retailer._id, status: 'active' } },
-          { $group: { _id: null, totalStock: { $sum: '$quantity' } } },
-        ]),
-      ]);
+    const [
+      outOfStock,
+      lowStock,
+      underReview,
+      topSearched,
+      totalStockAgg,
+      totalProducts,
+    ] = await Promise.all([
+      this.inventoryRepository
+        .find({ retailerId: retailer._id, status: 'active', quantity: 0 })
+        .select('name totalSearches')
+        .sort({ totalSearches: -1 })
+        .lean(),
+      this.inventoryRepository
+        .find({
+          retailerId: retailer._id,
+          status: 'active',
+          quantity: { $gt: 0 },
+          $expr: { $lte: ['$quantity', '$lowStockThreshold'] },
+        })
+        .select('name quantity lowStockThreshold')
+        .sort({ quantity: 1 })
+        .lean(),
+      this.inventoryRepository
+        .find({ retailerId: retailer._id, status: 'under_review' })
+        .select('name createdAt')
+        .sort({ createdAt: 1 })
+        .lean(),
+      this.inventoryRepository
+        .find({
+          retailerId: retailer._id,
+          status: 'active',
+          totalSearches: { $gt: 0 },
+        })
+        .select('name totalSearches quantity lowStockThreshold')
+        .sort({ totalSearches: -1 })
+        .limit(5)
+        .lean(),
+      this.inventoryRepository.aggregate([
+        { $match: { retailerId: retailer._id, status: 'active' } },
+        { $group: { _id: null, totalStock: { $sum: '$quantity' } } },
+      ]),
+      this.inventoryRepository.countDocuments({
+        retailerId: retailer._id,
+        status: 'active',
+      }),
+    ]);
 
     const stockStatus = (item: any) =>
       item.quantity === 0
@@ -941,6 +1054,7 @@ export class InventoryService {
         stockStatus: stockStatus(item),
       })),
       totalStock: (totalStockAgg[0]?.totalStock as number) ?? 0,
+      totalProducts,
     };
   }
 
@@ -989,7 +1103,11 @@ export class InventoryService {
       status: 'active',
     };
     if (params.searchTerm) {
-      const regex = new RegExp(params.searchTerm, 'i');
+      const escapedSearch = params.searchTerm.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&',
+      );
+      const regex = new RegExp(escapedSearch, 'i');
       filter.$or = [{ name: regex }, { brand: regex }];
     }
     if (params.strength) filter.strength = params.strength;

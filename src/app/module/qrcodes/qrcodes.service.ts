@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import axios from 'axios';
 import {
   buildStoreQrTarget,
   generateAndUploadQrCode,
@@ -36,6 +37,23 @@ export class QrcodesService {
     if (!qrcode) throw new HttpException('QR code not found', 404);
 
     return qrcode;
+  }
+
+  async downloadMyQrcode(userId: string) {
+    const qrcode = await this.qrCodeModel.findOne({ userId });
+    if (!qrcode?.qrcodeUrl) throw new HttpException('QR code not found', 404);
+
+    try {
+      const response = await axios.get<ArrayBuffer>(qrcode.qrcodeUrl, {
+        responseType: 'arraybuffer',
+      });
+      return {
+        buffer: Buffer.from(response.data),
+        contentType: String(response.headers['content-type'] || 'image/png'),
+      };
+    } catch {
+      throw new HttpException('Could not download QR code', 502);
+    }
   }
 
   async regenerateQrcode(userId: string) {

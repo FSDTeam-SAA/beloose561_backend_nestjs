@@ -28,6 +28,8 @@ export class RetailerService {
   async createRetailer(userId: string, createRetailerDto: CreateRetailerDto) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new HttpException('User not found', 404);
+    const existingRetailer = await this.retailerModel.findOne({ userId });
+    if (existingRetailer) return existingRetailer;
     const slage = createRetailerDto.storeName
       .replace(/\s+/g, '-')
       .toLowerCase();
@@ -49,6 +51,12 @@ export class RetailerService {
       qrcodeUrl: qrCodeUrl,
     });
 
+    return retailer;
+  }
+
+  async getMyRetailer(userId: string) {
+    const retailer = await this.retailerModel.findOne({ userId });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
     return retailer;
   }
 
