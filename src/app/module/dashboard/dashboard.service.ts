@@ -242,6 +242,87 @@ export class DashboardService {
     };
   }
 
+  async getRetailerTopProducts(userId: string, year?: number) {
+    const retailer = await this.getRetailerByUserId(userId);
+    const { targetYear, startDate, endDate } = this.getYearDateRange(year);
+
+    const topProducts = await this.inventoryModel.aggregate([
+      {
+        $match: {
+          retailerId: retailer._id,
+          salesHistory: {
+            $elemMatch: { soldAt: { $gte: startDate, $lt: endDate } },
+          },
+        },
+      },
+      { $unwind: '$salesHistory' },
+      {
+        $match: {
+          'salesHistory.soldAt': { $gte: startDate, $lt: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          name: { $first: '$name' },
+          brand: { $first: '$brand' },
+          unitsSold: { $sum: '$salesHistory.quantitySold' },
+          revenue: { $sum: '$salesHistory.totalAmount' },
+        },
+      },
+      { $sort: { unitsSold: -1, revenue: -1 } },
+      { $limit: 5 },
+    ]);
+
+    return {
+      year: targetYear,
+      retailer: this.formatRetailer(retailer),
+      topProducts: topProducts.map((item, index) => ({
+        rank: index + 1,
+        _id: item._id,
+        name: item.name,
+        brand: item.brand,
+        unitsSold: item.unitsSold,
+        revenue: Number(((item.revenue as number) ?? 0).toFixed(2)),
+      })),
+    };
+  }
+
+  async getRetailerStrengthDistribution(userId: string) {
+    const retailer = await this.getRetailerByUserId(userId);
+    const strengthDistribution = await this.inventoryModel.aggregate([
+      { $match: { retailerId: retailer._id, status: { $ne: 'inactive' } } },
+      {
+        $group: {
+          _id: { $ifNull: ['$strength', 'unknown'] },
+          quantity: { $sum: '$quantity' },
+          items: { $sum: 1 },
+        },
+      },
+      { $sort: { quantity: -1 } },
+    ]);
+
+    const totalQuantity = strengthDistribution.reduce(
+      (sum, item) => sum + ((item.quantity as number) ?? 0),
+      0,
+    );
+
+    return {
+      retailer: this.formatRetailer(retailer),
+      strengthDistribution: strengthDistribution.map((item) => ({
+        strength: item._id,
+        quantity: item.quantity,
+        items: item.items,
+        percentage:
+          totalQuantity > 0
+            ? Number(
+                (((item.quantity as number) / totalQuantity) * 100).toFixed(2),
+              )
+            : 0,
+      })),
+    };
+  }
+
   async getRetailerBusinessInsights(userId: string, year?: number) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new HttpException('User not found', 404);
