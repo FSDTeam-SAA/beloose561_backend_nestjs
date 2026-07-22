@@ -136,6 +136,30 @@ export class Inventory {
   @Prop()
   lastSoldDate!: Date;
 
+  @Prop({ default: 0 })
+  totalSold!: number;
+
+  @Prop({
+    type: [
+      {
+        quantitySold: { type: Number, required: true, min: 1 },
+        unitPrice: { type: Number, required: true, min: 0 },
+        totalAmount: { type: Number, required: true, min: 0 },
+        soldAt: { type: Date, required: true },
+      },
+    ],
+    default: [],
+  })
+  salesHistory!: {
+    quantitySold: number;
+    unitPrice: number;
+    totalAmount: number;
+    soldAt: Date;
+  }[];
+
+  @Prop()
+  lastLowStockNotificationAt!: Date;
+
   // Inventory Opportunities - Discount
   @Prop({ default: false })
   isOnDiscount!: boolean;

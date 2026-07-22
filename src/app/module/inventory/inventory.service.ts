@@ -28,6 +28,7 @@ import {
   NewOrFamiliarPreference,
 } from './dto/guided-discovery.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
+import { RecordSaleDto } from './dto/record-sale.dto';
 import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
 import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
@@ -277,6 +278,76 @@ export class InventoryService {
     if (!inventory) throw new HttpException('Inventory not found', 404);
     const result = await this.inventoryRepository.findByIdAndDelete(id);
     return result;
+  }
+
+  async recordSale(userId: string, id: string, dto: RecordSaleDto) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const inventory = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!inventory) throw new HttpException('Inventory not found', 404);
+
+    const quantitySold = dto.quantitySold ?? 1;
+    if (quantitySold > inventory.quantity) {
+      throw new HttpException('Sold quantity cannot exceed current stock', 400);
+    }
+
+    const previousQuantity = inventory.quantity;
+    const newQuantity = previousQuantity - quantitySold;
+    const soldAt = new Date();
+    const lowStockThreshold = inventory.lowStockThreshold ?? 5;
+    const crossedLowStockLevel =
+      previousQuantity > lowStockThreshold && newQuantity <= lowStockThreshold;
+
+    inventory.quantity = newQuantity;
+    inventory.lastSoldDate = soldAt;
+    inventory.totalSold = (inventory.totalSold ?? 0) + quantitySold;
+    inventory.salesHistory = [
+      ...(inventory.salesHistory ?? []),
+      {
+        quantitySold,
+        unitPrice: inventory.price,
+        totalAmount: Number((quantitySold * inventory.price).toFixed(2)),
+        soldAt,
+      },
+    ];
+    if (newQuantity === 0) inventory.status = 'out_of_stock';
+    if (crossedLowStockLevel) {
+      inventory.lastLowStockNotificationAt = soldAt;
+    }
+
+    await inventory.save();
+
+    const notification = crossedLowStockLevel
+      ? {
+          type: newQuantity === 0 ? 'out_of_stock' : 'low_stock',
+          title: newQuantity === 0 ? 'Out of Stock' : 'Low Inventory Alert',
+          message:
+            newQuantity === 0
+              ? `${inventory.name} is out of stock`
+              : `${inventory.name} has ${newQuantity} cigar(s) left`,
+          inventoryId: inventory._id,
+          quantity: newQuantity,
+          lowStockThreshold,
+          createdAt: soldAt,
+        }
+      : null;
+
+    return {
+      inventory,
+      sale: {
+        quantitySold,
+        previousQuantity,
+        quantity: newQuantity,
+        soldAt,
+      },
+      notification,
+    };
   }
 
   // async adminUpdateStatus(id: string, status: string) {
