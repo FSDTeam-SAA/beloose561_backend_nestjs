@@ -96,6 +96,13 @@ export class InventoryService {
       humidorId: humidor._id,
       status: 'under_review',
     });
+    if (!user.isInventory) {
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { isInventory: true },
+        { new: true },
+      );
+    }
     return inventory;
   }
 
