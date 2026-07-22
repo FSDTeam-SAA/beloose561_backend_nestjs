@@ -272,15 +272,42 @@ export class InventoryService {
     return result;
   }
 
+  // async adminUpdateStatus(id: string, status: string) {
+  //   const inventory = await this.inventoryRepository.findById(id);
+  //   if (!inventory) throw new HttpException('Inventory not found', 404);
+  //   const result = await this.inventoryRepository.findByIdAndUpdate(
+  //     id,
+  //     { status },
+  //     { new: true },
+  //   );
+  //   return result;
+  // }
+
   async adminUpdateStatus(id: string, status: string) {
     const inventory = await this.inventoryRepository.findById(id);
     if (!inventory) throw new HttpException('Inventory not found', 404);
-    const result = await this.inventoryRepository.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true },
-    );
-    return result;
+
+    // status 'active' e approve hocche ebong ei item MasterDatabase e nai (nijer deya info diye under_review chilo)
+    if (status === 'active' && !inventory.masterCigarId) {
+      const masterEntry = await this.masterDatabaseModel.create({
+        name: inventory.name,
+        brand: inventory.brand,
+        strength: inventory.strength,
+        wrapper: inventory.wrapper,
+        size: inventory.size,
+        image: inventory.image,
+        description: inventory.description,
+        status: 'approved',
+        submittedByRetailer: inventory.retailerId,
+      });
+
+      inventory.masterCigarId = masterEntry._id;
+    }
+
+    inventory.status = status;
+    await inventory.save();
+
+    return inventory;
   }
 
   // Cigars with no sale in `days` days (or never sold since being added)
