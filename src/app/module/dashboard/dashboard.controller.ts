@@ -79,6 +79,47 @@ export class DashboardController {
     };
   }
 
+  @Get('retailer/top-products')
+  @ApiOperation({
+    summary: 'Retailer Top Products - best-selling product bar chart data',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, example: 2026 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerTopProducts(
+    @Req() req: Request,
+    @Query('year') year?: string,
+  ) {
+    const result = await this.dashboardService.getRetailerTopProducts(
+      req.user!.id,
+      year ? Number(year) : undefined,
+    );
+
+    return {
+      message: 'Retailer top products retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('retailer/strength-distribution')
+  @ApiOperation({
+    summary: 'Retailer Strength Distribution - strength pie chart data',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerStrengthDistribution(@Req() req: Request) {
+    const result = await this.dashboardService.getRetailerStrengthDistribution(
+      req.user!.id,
+    );
+
+    return {
+      message: 'Retailer strength distribution retrieved successfully',
+      data: result,
+    };
+  }
+
   @Get('retailer/business-insights')
   @ApiOperation({
     summary:
