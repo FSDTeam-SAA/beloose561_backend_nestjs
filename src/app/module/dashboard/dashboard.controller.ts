@@ -35,6 +35,74 @@ export class DashboardController {
     };
   }
 
+  @Get('retailer/cards')
+  @ApiOperation({
+    summary:
+      'Retailer Cards - total revenue, units sold, average order value, slow stock, and retailer name',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, example: 2026 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerCards(@Req() req: Request, @Query('year') year?: string) {
+    const result = await this.dashboardService.getRetailerCards(
+      req.user!.id,
+      year ? Number(year) : undefined,
+    );
+
+    return {
+      message: 'Retailer cards retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('retailer/sales-trend')
+  @ApiOperation({
+    summary: 'Retailer Sales Trend - monthly revenue line chart data',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, example: 2026 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerSalesTrend(
+    @Req() req: Request,
+    @Query('year') year?: string,
+  ) {
+    const result = await this.dashboardService.getRetailerSalesTrend(
+      req.user!.id,
+      year ? Number(year) : undefined,
+    );
+
+    return {
+      message: 'Retailer sales trend retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('retailer/business-insights')
+  @ApiOperation({
+    summary:
+      'Retailer Business Insights - sales cards, trends, strength distribution, top products, and retailer name',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, example: 2026 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async getRetailerBusinessInsights(
+    @Req() req: Request,
+    @Query('year') year?: string,
+  ) {
+    const result = await this.dashboardService.getRetailerBusinessInsights(
+      req.user!.id,
+      year ? Number(year) : undefined,
+    );
+
+    return {
+      message: 'Retailer business insights retrieved successfully',
+      data: result,
+    };
+  }
+
   @Get('overview')
   @ApiOperation({
     summary: 'Get dashboard overview data',

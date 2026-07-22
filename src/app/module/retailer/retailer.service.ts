@@ -51,6 +51,12 @@ export class RetailerService {
       qrcodeUrl: qrCodeUrl,
     });
 
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      { isRelailer: true },
+      { new: true },
+    );
+
     return retailer;
   }
 

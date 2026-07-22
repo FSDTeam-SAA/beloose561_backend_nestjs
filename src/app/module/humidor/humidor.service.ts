@@ -36,6 +36,13 @@ export class HumidorService {
       userId: user._id,
       retailerId: retailer._id,
     });
+    if (!user.isHumidor) {
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { isHumidor: true },
+        { new: true },
+      );
+    }
     return humidor;
   }
 

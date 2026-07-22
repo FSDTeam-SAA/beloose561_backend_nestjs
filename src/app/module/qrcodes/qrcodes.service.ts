@@ -10,6 +10,7 @@ import {
   Retailer,
   RetailerDocument,
 } from '../retailer/entities/retailer.entity';
+import { User, UserDocument } from '../user/entities/user.entity';
 import { Qrcode, QrcodeDocument } from './entities/qrcode.entity';
 
 @Injectable()
@@ -20,6 +21,8 @@ export class QrcodesService {
 
     @InjectModel(Retailer.name)
     private readonly retailerModel: Model<RetailerDocument>,
+
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
   async getAllQrcodes() {
@@ -31,10 +34,20 @@ export class QrcodesService {
   }
 
   async getMyQrcode(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('user is not found', 404);
     const qrcode = await this.qrCodeModel
       .findOne({ userId })
       .populate('retailerId', 'storeName storeSlug');
     if (!qrcode) throw new HttpException('QR code not found', 404);
+
+    if (!user.isQrCode) {
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { isQrCode: true },
+        { new: true },
+      );
+    }
 
     return qrcode;
   }

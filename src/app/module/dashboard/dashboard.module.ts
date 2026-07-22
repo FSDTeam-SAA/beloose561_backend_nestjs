@@ -3,6 +3,11 @@ import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InventoryModule } from '../inventory/inventory.module';
+import {
+  Inventory,
+  InventorySchema,
+} from '../inventory/entities/inventory.entity';
+import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
 
@@ -11,6 +16,8 @@ import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Payment.name, schema: PaymentSchema },
+      { name: Retailer.name, schema: RetailerSchema },
+      { name: Inventory.name, schema: InventorySchema },
     ]),
     InventoryModule,
   ],

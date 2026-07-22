@@ -5,8 +5,30 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { Model } from 'mongoose';
 import { InventoryService } from '../inventory/inventory.service';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
+import {
+  Inventory,
+  InventoryDocument,
+} from '../inventory/entities/inventory.entity';
+import {
+  Retailer,
+  RetailerDocument,
+} from '../retailer/entities/retailer.entity';
 
 const PAYMENT_DUE_SOON_DAYS = 3;
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 @Injectable()
 export class DashboardService {
@@ -14,6 +36,10 @@ export class DashboardService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(Retailer.name)
+    private readonly retailerModel: Model<RetailerDocument>,
+    @InjectModel(Inventory.name)
+    private readonly inventoryModel: Model<InventoryDocument>,
     private readonly inventoryService: InventoryService,
   ) {}
 
@@ -101,6 +127,272 @@ export class DashboardService {
         totalRevenue: Number(totalYearRevenue.toFixed(2)),
       },
       chartData,
+    };
+  }
+
+  private getYearDateRange(year?: number) {
+    const targetYear = year ?? new Date().getFullYear();
+    return {
+      targetYear,
+      startDate: new Date(`${targetYear}-01-01T00:00:00.000Z`),
+      endDate: new Date(`${targetYear + 1}-01-01T00:00:00.000Z`),
+    };
+  }
+
+  private async getRetailerByUserId(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    return retailer;
+  }
+
+  private formatRetailer(retailer: RetailerDocument) {
+    return {
+      _id: retailer._id,
+      name: retailer.storeName,
+      storeName: retailer.storeName,
+      storeSlug: retailer.storeSlug,
+      logo: retailer.logo,
+    };
+  }
+
+  private async getMonthlySales(retailerId: unknown, year?: number) {
+    const { targetYear, startDate, endDate } = this.getYearDateRange(year);
+    const result = await this.inventoryModel.aggregate([
+      {
+        $match: {
+          retailerId,
+          salesHistory: {
+            $elemMatch: { soldAt: { $gte: startDate, $lt: endDate } },
+          },
+        },
+      },
+      { $unwind: '$salesHistory' },
+      {
+        $match: {
+          'salesHistory.soldAt': { $gte: startDate, $lt: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: '$salesHistory.soldAt' } },
+          revenue: { $sum: '$salesHistory.totalAmount' },
+          unitsSold: { $sum: '$salesHistory.quantitySold' },
+        },
+      },
+      { $sort: { '_id.month': 1 } },
+    ]);
+
+    return {
+      year: targetYear,
+      monthly: MONTH_LABELS.map((month, index) => {
+        const found = result.find((item) => item._id.month === index + 1);
+        return {
+          month,
+          revenue: Number(((found?.revenue as number) ?? 0).toFixed(2)),
+          unitsSold: (found?.unitsSold as number) ?? 0,
+        };
+      }),
+    };
+  }
+
+  async getRetailerCards(userId: string, year?: number) {
+    const retailer = await this.getRetailerByUserId(userId);
+    const [{ year: targetYear, monthly }, slowStockCount] = await Promise.all([
+      this.getMonthlySales(retailer._id, year),
+      this.inventoryModel.countDocuments({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+        $expr: { $lte: ['$quantity', '$lowStockThreshold'] },
+      }),
+    ]);
+
+    const totalRevenue = monthly.reduce((sum, item) => sum + item.revenue, 0);
+    const unitsSold = monthly.reduce((sum, item) => sum + item.unitsSold, 0);
+
+    return {
+      year: targetYear,
+      retailer: this.formatRetailer(retailer),
+      cards: {
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        unitsSold,
+        avgOrderValue:
+          unitsSold > 0 ? Number((totalRevenue / unitsSold).toFixed(2)) : 0,
+        slowStock: slowStockCount,
+      },
+    };
+  }
+
+  async getRetailerSalesTrend(userId: string, year?: number) {
+    const retailer = await this.getRetailerByUserId(userId);
+    const { year: targetYear, monthly } = await this.getMonthlySales(
+      retailer._id,
+      year,
+    );
+
+    return {
+      year: targetYear,
+      retailer: this.formatRetailer(retailer),
+      salesTrend: monthly.map((item) => ({
+        month: item.month,
+        revenue: item.revenue,
+      })),
+    };
+  }
+
+  async getRetailerBusinessInsights(userId: string, year?: number) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const targetYear = year ?? new Date().getFullYear();
+    const startDate = new Date(`${targetYear}-01-01T00:00:00.000Z`);
+    const endDate = new Date(`${targetYear + 1}-01-01T00:00:00.000Z`);
+    const monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    const baseMatch = {
+      retailerId: retailer._id,
+      salesHistory: {
+        $elemMatch: { soldAt: { $gte: startDate, $lt: endDate } },
+      },
+    };
+
+    const [salesByMonth, topProducts, strengthDistribution, slowStockCount] =
+      await Promise.all([
+        this.inventoryModel.aggregate([
+          { $match: baseMatch },
+          { $unwind: '$salesHistory' },
+          {
+            $match: {
+              'salesHistory.soldAt': { $gte: startDate, $lt: endDate },
+            },
+          },
+          {
+            $group: {
+              _id: { month: { $month: '$salesHistory.soldAt' } },
+              revenue: { $sum: '$salesHistory.totalAmount' },
+              unitsSold: { $sum: '$salesHistory.quantitySold' },
+            },
+          },
+          { $sort: { '_id.month': 1 } },
+        ]),
+        this.inventoryModel.aggregate([
+          { $match: baseMatch },
+          { $unwind: '$salesHistory' },
+          {
+            $match: {
+              'salesHistory.soldAt': { $gte: startDate, $lt: endDate },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id',
+              name: { $first: '$name' },
+              brand: { $first: '$brand' },
+              unitsSold: { $sum: '$salesHistory.quantitySold' },
+              revenue: { $sum: '$salesHistory.totalAmount' },
+            },
+          },
+          { $sort: { unitsSold: -1, revenue: -1 } },
+          { $limit: 5 },
+        ]),
+        this.inventoryModel.aggregate([
+          { $match: { retailerId: retailer._id, status: { $ne: 'inactive' } } },
+          {
+            $group: {
+              _id: { $ifNull: ['$strength', 'unknown'] },
+              quantity: { $sum: '$quantity' },
+              items: { $sum: 1 },
+            },
+          },
+          { $sort: { quantity: -1 } },
+        ]),
+        this.inventoryModel.countDocuments({
+          retailerId: retailer._id,
+          status: 'active',
+          quantity: { $gt: 0 },
+          $expr: { $lte: ['$quantity', '$lowStockThreshold'] },
+        }),
+      ]);
+
+    const monthly = monthLabels.map((month, index) => {
+      const found = salesByMonth.find((item) => item._id.month === index + 1);
+      return {
+        month,
+        revenue: Number(((found?.revenue as number) ?? 0).toFixed(2)),
+        unitsSold: (found?.unitsSold as number) ?? 0,
+      };
+    });
+
+    const totalRevenue = monthly.reduce((sum, item) => sum + item.revenue, 0);
+    const unitsSold = monthly.reduce((sum, item) => sum + item.unitsSold, 0);
+    const totalStrengthQuantity = strengthDistribution.reduce(
+      (sum, item) => sum + ((item.quantity as number) ?? 0),
+      0,
+    );
+
+    return {
+      year: targetYear,
+      retailer: {
+        _id: retailer._id,
+        name: retailer.storeName,
+        storeName: retailer.storeName,
+        storeSlug: retailer.storeSlug,
+        logo: retailer.logo,
+      },
+      cards: {
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        unitsSold,
+        avgOrderValue:
+          unitsSold > 0 ? Number((totalRevenue / unitsSold).toFixed(2)) : 0,
+        slowStock: slowStockCount,
+      },
+      salesTrend: monthly.map((item) => ({
+        month: item.month,
+        revenue: item.revenue,
+      })),
+      unitsSoldByMonth: monthly.map((item) => ({
+        month: item.month,
+        unitsSold: item.unitsSold,
+      })),
+      strengthDistribution: strengthDistribution.map((item) => ({
+        strength: item._id,
+        quantity: item.quantity,
+        items: item.items,
+        percentage:
+          totalStrengthQuantity > 0
+            ? Number(
+                (
+                  ((item.quantity as number) / totalStrengthQuantity) *
+                  100
+                ).toFixed(2),
+              )
+            : 0,
+      })),
+      topProducts: topProducts.map((item, index) => ({
+        rank: index + 1,
+        _id: item._id,
+        name: item.name,
+        brand: item.brand,
+        unitsSold: item.unitsSold,
+        revenue: Number(((item.revenue as number) ?? 0).toFixed(2)),
+      })),
     };
   }
 

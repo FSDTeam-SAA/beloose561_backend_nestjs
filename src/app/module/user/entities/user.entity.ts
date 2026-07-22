@@ -95,6 +95,18 @@ export class User {
 
   @Prop()
   stripeAccountId!: string;
+
+  @Prop({ default: false })
+  isRelailer!: boolean;
+
+  @Prop({ default: false })
+  isHumidor!: boolean;
+
+  @Prop({ default: false })
+  isInventory!: boolean;
+
+  @Prop({ default: false })
+  isQrCode!: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

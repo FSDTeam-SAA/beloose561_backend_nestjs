@@ -34,6 +34,7 @@ import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
 import { GuidedDiscoveryDto } from './dto/guided-discovery.dto';
 import { MarkNewArrivalDto } from './dto/mark-new-arrival.dto';
+import { RecordSaleDto } from './dto/record-sale.dto';
 import { SetDailyFeaturedDto } from './dto/set-daily-featured.dto';
 import { UpdateDailyFeaturedDto } from './dto/update-daily-featured.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
@@ -325,6 +326,30 @@ export class InventoryController {
       message: 'Inventory retrieved successfully',
       meta: result.meta,
       data: result.data,
+    };
+  }
+
+  @Post(':id/record-sale')
+  @ApiOperation({
+    summary: 'Record Sale - reduce stock from an inventory item',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async recordSale(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() recordSaleDto: RecordSaleDto,
+  ) {
+    const result = await this.inventoryService.recordSale(
+      req.user!.id,
+      id,
+      recordSaleDto,
+    );
+
+    return {
+      message: 'Sale recorded successfully',
+      data: result,
     };
   }
 
