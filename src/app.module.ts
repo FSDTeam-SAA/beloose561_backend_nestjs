@@ -16,6 +16,7 @@ import { RetailerModule } from './app/module/retailer/retailer.module';
 import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { UserModule } from './app/module/user/user.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
+import { RetailerBannerModule } from './app/module/retailer-banner/retailer-banner.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
     InventoryModule,
     QrcodesModule,
     MasterDatabaseModule,
+    RetailerBannerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

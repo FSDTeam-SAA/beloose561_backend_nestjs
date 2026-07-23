@@ -568,6 +568,18 @@ export class InventoryController {
     };
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get single inventory' })
+  @HttpCode(HttpStatus.OK)
+  async getInventory(@Param('id') id: string) {
+    const result = await this.inventoryService.getInventoryById(id);
+
+    return {
+      message: 'Inventory retrieved successfully',
+      data: result,
+    };
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Edit inventory item' })
   @ApiBearerAuth('access-token')
