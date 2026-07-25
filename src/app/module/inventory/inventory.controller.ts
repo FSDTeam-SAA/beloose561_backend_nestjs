@@ -590,10 +590,7 @@ export class InventoryController {
     @Param('slug') slug: string,
     @Param('id') id: string,
   ) {
-    const result = await this.inventoryService.getMoreExclusiveCigars(
-      slug,
-      id,
-    );
+    const result = await this.inventoryService.getMoreExclusiveCigars(slug, id);
 
     return {
       message: 'More exclusive cigars retrieved successfully',

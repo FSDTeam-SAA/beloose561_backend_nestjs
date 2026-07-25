@@ -464,17 +464,6 @@ export class InventoryService {
     };
   }
 
-  // async adminUpdateStatus(id: string, status: string) {
-  //   const inventory = await this.inventoryRepository.findById(id);
-  //   if (!inventory) throw new HttpException('Inventory not found', 404);
-  //   const result = await this.inventoryRepository.findByIdAndUpdate(
-  //     id,
-  //     { status },
-  //     { new: true },
-  //   );
-  //   return result;
-  // }
-
   async adminUpdateStatus(id: string, status: string) {
     const inventory = await this.inventoryRepository.findById(id);
     if (!inventory) throw new HttpException('Inventory not found', 404);
