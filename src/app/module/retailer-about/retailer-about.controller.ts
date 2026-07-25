@@ -58,8 +58,6 @@ export class RetailerAboutController {
 
   @Get()
   @ApiOperation({ summary: 'Get All Retailer About' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
   @ApiQuery({ name: 'searchTerm', required: false })
   @ApiQuery({ name: 'title', required: false })
   @ApiQuery({ name: 'description', required: false })

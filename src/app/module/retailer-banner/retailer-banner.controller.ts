@@ -57,8 +57,6 @@ export class RetailerBannerController {
 
   @Get()
   @ApiOperation({ summary: 'Get All Retailer Banner' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
   @ApiQuery({ name: 'searchTerm', required: false })
   @ApiQuery({ name: 'title', required: false })
   @ApiQuery({ name: 'description', required: false })

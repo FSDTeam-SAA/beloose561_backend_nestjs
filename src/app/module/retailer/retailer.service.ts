@@ -14,6 +14,7 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
 import { UpdateRetailerDto } from './dto/update-retailer.dto';
 import { Retailer, RetailerDocument } from './entities/retailer.entity';
+import type { JwtPayload } from '../../middlewares/auth.guard';
 
 @Injectable()
 export class RetailerService {
@@ -106,20 +107,41 @@ export class RetailerService {
     id: string,
     updateRetailerDto: UpdateRetailerDto,
     files?: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] },
+    actor?: JwtPayload,
   ) {
+    const updatePayload: Partial<UpdateRetailerDto> =
+      actor?.role === 'admin'
+        ? { ...updateRetailerDto }
+        : {
+            storeName: updateRetailerDto.storeName,
+            address: updateRetailerDto.address,
+            phoneNumber: updateRetailerDto.phoneNumber,
+            city: updateRetailerDto.city,
+            description: updateRetailerDto.description,
+          };
+
     if (files?.logo?.[0]) {
       const uploadedLogo = await fileUpload.uploadToCloudinary(files.logo[0]);
-      updateRetailerDto.logo = uploadedLogo.url;
+      updatePayload.logo = uploadedLogo.url;
     }
     if (files?.banner?.[0]) {
       const uploadedBanner = await fileUpload.uploadToCloudinary(
         files.banner[0],
       );
-      updateRetailerDto.banner = uploadedBanner.url;
+      updatePayload.banner = uploadedBanner.url;
     }
-    const retailer = await this.retailerModel.findByIdAndUpdate(
-      id,
-      updateRetailerDto,
+
+    Object.keys(updatePayload).forEach((key) => {
+      if (updatePayload[key as keyof UpdateRetailerDto] === undefined)
+        delete updatePayload[key as keyof UpdateRetailerDto];
+    });
+
+    const retailer = await this.retailerModel.findOneAndUpdate(
+      {
+        _id: id,
+        ...(actor?.role !== 'admin' && { userId: actor?.id }),
+      },
+      updatePayload,
       { new: true },
     );
     if (!retailer) throw new HttpException('Retailer not found', 404);

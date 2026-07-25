@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -16,8 +17,16 @@ import {
 export enum CustomCigarStrength {
   MILD = 'mild',
   MEDIUM = 'medium',
+  MEDIUM_FULL = 'medium-full',
   FULL = 'full',
 }
+
+export const INVENTORY_SMOKING_TIME_OPTIONS = [
+  '30',
+  '60',
+  '90',
+  '120+',
+] as const;
 
 // multipart/form-data always sends fields as strings, so an "empty" optional
 // field arrives as '' instead of being omitted, and @IsOptional() doesn't skip it.
@@ -86,6 +95,16 @@ export class CreateInventoryDto {
   @EmptyToUndefined()
   @IsString()
   size?: string;
+
+  @ApiPropertyOptional({
+    example: '60',
+    enum: INVENTORY_SMOKING_TIME_OPTIONS,
+    description: 'Smoking time in minutes ("120+" for 2+ hours)',
+  })
+  @IsOptional()
+  @EmptyToUndefined()
+  @IsIn(INVENTORY_SMOKING_TIME_OPTIONS)
+  smokingTime?: (typeof INVENTORY_SMOKING_TIME_OPTIONS)[number];
 
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
   @IsOptional()

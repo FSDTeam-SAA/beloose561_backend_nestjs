@@ -45,6 +45,9 @@ export class Inventory {
   @Prop()
   size!: string;
 
+  @Prop({ enum: ['30', '60', '90', '120+'] })
+  smokingTime!: string;
+
   @Prop()
   image!: string;
 

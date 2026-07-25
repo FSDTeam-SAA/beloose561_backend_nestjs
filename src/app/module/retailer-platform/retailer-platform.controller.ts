@@ -60,8 +60,6 @@ export class RetailerPlatformController {
 
   @Get()
   @ApiOperation({ summary: 'Get All Retailer Platform' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
   @ApiQuery({ name: 'searchTerm', required: false })
   @ApiQuery({ name: 'platformLabel', required: false })
   @ApiQuery({ name: 'title', required: false })
