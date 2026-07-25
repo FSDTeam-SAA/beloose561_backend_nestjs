@@ -69,13 +69,29 @@ export class RetailerBannerService {
     createRetailerBannerDto: CreateRetailerBannerDto,
     file?: Express.Multer.File,
   ) {
+    const sanitizedUpdatePayload: Partial<CreateRetailerBannerDto> = {};
+
+    if (typeof createRetailerBannerDto.title === 'string') {
+      sanitizedUpdatePayload.title = createRetailerBannerDto.title;
+    }
+    if (typeof createRetailerBannerDto.description === 'string') {
+      sanitizedUpdatePayload.description = createRetailerBannerDto.description;
+    }
+    if (typeof createRetailerBannerDto.mainTitle === 'string') {
+      sanitizedUpdatePayload.mainTitle = createRetailerBannerDto.mainTitle;
+    }
+    if (typeof createRetailerBannerDto.banner === 'string') {
+      sanitizedUpdatePayload.banner = createRetailerBannerDto.banner;
+    }
+
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
-      createRetailerBannerDto.banner = uploadedFile.url;
+      sanitizedUpdatePayload.banner = uploadedFile.url;
     }
+
     const result = await this.retailerBannerModel.findByIdAndUpdate(
       id,
-      createRetailerBannerDto,
+      sanitizedUpdatePayload,
       { new: true },
     );
     return result;
