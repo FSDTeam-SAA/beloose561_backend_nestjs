@@ -69,14 +69,28 @@ export class RetailerAboutService {
     updateRetailerAboutDto: UpdateRetailerAboutDto,
     file?: Express.Multer.File,
   ) {
+    const safeUpdateData: Partial<UpdateRetailerAboutDto> = {};
+
+    if (typeof updateRetailerAboutDto.title !== 'undefined') {
+      safeUpdateData.title = updateRetailerAboutDto.title;
+    }
+    if (typeof updateRetailerAboutDto.description !== 'undefined') {
+      safeUpdateData.description = updateRetailerAboutDto.description;
+    }
+    if (typeof updateRetailerAboutDto.features !== 'undefined') {
+      safeUpdateData.features = updateRetailerAboutDto.features;
+    }
+
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
-      updateRetailerAboutDto.image = uploadedFile.url;
+      safeUpdateData.image = uploadedFile.url;
+    } else if (typeof updateRetailerAboutDto.image !== 'undefined') {
+      safeUpdateData.image = updateRetailerAboutDto.image;
     }
 
     const result = await this.retailerAboutModel.findByIdAndUpdate(
       id,
-      updateRetailerAboutDto,
+      { $set: safeUpdateData },
       { new: true },
     );
     return result;
