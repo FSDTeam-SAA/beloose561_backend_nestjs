@@ -565,6 +565,42 @@ export class InventoryController {
     };
   }
 
+  @Get(':slug/:id/related')
+  @ApiOperation({
+    summary:
+      'Customer App - single cigar detail page recommendations: "You Might Also Enjoy", "Looking for Something More Exclusive?", and "Similar Cigars" (public)',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getRelatedCigars(@Param('slug') slug: string, @Param('id') id: string) {
+    const result = await this.inventoryService.getRelatedCigars(slug, id);
+
+    return {
+      message: 'Related cigars retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get(':slug/:id/exclusive-picks')
+  @ApiOperation({
+    summary:
+      'Customer App - "Looking for Something More Exclusive?" pricier picks for a single cigar (public)',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getMoreExclusiveCigars(
+    @Param('slug') slug: string,
+    @Param('id') id: string,
+  ) {
+    const result = await this.inventoryService.getMoreExclusiveCigars(
+      slug,
+      id,
+    );
+
+    return {
+      message: 'More exclusive cigars retrieved successfully',
+      data: result,
+    };
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create inventory' })
   @ApiConsumes('multipart/form-data')

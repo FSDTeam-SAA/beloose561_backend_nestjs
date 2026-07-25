@@ -1623,4 +1623,86 @@ export class InventoryService {
       },
     };
   }
+
+  async getRelatedCigars(shopSlug: string, id: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const current = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!current) throw new HttpException('Inventory not found', 404);
+
+    const projection =
+      'name brand strength wrapper size image price quantity status';
+    const baseQuery = {
+      retailerId: retailer._id,
+      status: 'active',
+      quantity: { $gt: 0 },
+      _id: { $ne: current._id },
+    };
+
+    // "You Might Also Enjoy" - same brand or same wrapper, most popular first
+    const youMightAlsoEnjoy = await this.inventoryRepository
+      .find({
+        ...baseQuery,
+        $or: [{ brand: current.brand }, { wrapper: current.wrapper }],
+      })
+      .select(projection)
+      .sort({ totalSold: -1, totalViews: -1 })
+      .limit(4)
+      .lean();
+
+    // "Looking for Something More Exclusive?" - pricier picks, most expensive first
+    const moreExclusive = await this.inventoryRepository
+      .find({ ...baseQuery, price: { $gt: current.price } })
+      .select(projection)
+      .sort({ price: -1 })
+      .limit(3)
+      .lean();
+
+    // "Similar Cigars" - same strength & wrapper, useful as an out-of-stock alternative
+    const similarCigars = await this.inventoryRepository
+      .find({
+        ...baseQuery,
+        strength: current.strength,
+        wrapper: current.wrapper,
+      })
+      .select(projection)
+      .sort({ price: 1 })
+      .limit(4)
+      .lean();
+
+    return { youMightAlsoEnjoy, moreExclusive, similarCigars };
+  }
+
+  async getMoreExclusiveCigars(shopSlug: string, id: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const current = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!current) throw new HttpException('Inventory not found', 404);
+
+    // "Looking for Something More Exclusive?" - pricier picks, most expensive first
+    return this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+        _id: { $ne: current._id },
+        price: { $gt: current.price },
+      })
+      .select('name brand strength wrapper size image price quantity status')
+      .sort({ price: -1 })
+      .limit(3)
+      .lean();
+  }
 }
