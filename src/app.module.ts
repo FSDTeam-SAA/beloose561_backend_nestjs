@@ -12,6 +12,9 @@ import { InventoryModule } from './app/module/inventory/inventory.module';
 import { MasterDatabaseModule } from './app/module/master-database/master-database.module';
 import { PaymentModule } from './app/module/payment/payment.module';
 import { QrcodesModule } from './app/module/qrcodes/qrcodes.module';
+import { RetailerAboutModule } from './app/module/retailer-about/retailer-about.module';
+import { RetailerBannerModule } from './app/module/retailer-banner/retailer-banner.module';
+import { RetailerPlatformModule } from './app/module/retailer-platform/retailer-platform.module';
 import { RetailerModule } from './app/module/retailer/retailer.module';
 import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { UserModule } from './app/module/user/user.module';
@@ -33,6 +36,9 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
     InventoryModule,
     QrcodesModule,
     MasterDatabaseModule,
+    RetailerBannerModule,
+    RetailerAboutModule,
+    RetailerPlatformModule,
   ],
   controllers: [AppController],
   providers: [AppService],
