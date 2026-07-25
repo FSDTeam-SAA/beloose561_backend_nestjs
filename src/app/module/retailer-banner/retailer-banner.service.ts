@@ -74,8 +74,8 @@ export class RetailerBannerService {
     if (typeof createRetailerBannerDto.title === 'string') {
       sanitizedUpdatePayload.title = createRetailerBannerDto.title;
     }
-    if (typeof createRetailerBannerDto.description === 'string') {
-      sanitizedUpdatePayload.description = createRetailerBannerDto.description;
+    if (typeof createRetailerBannerDto.discription === 'string') {
+      sanitizedUpdatePayload.discription = createRetailerBannerDto.discription;
     }
     if (typeof createRetailerBannerDto.mainTitle === 'string') {
       sanitizedUpdatePayload.mainTitle = createRetailerBannerDto.mainTitle;
