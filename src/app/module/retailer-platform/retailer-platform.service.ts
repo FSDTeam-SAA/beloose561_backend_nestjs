@@ -77,14 +77,39 @@ export class RetailerPlatformService {
     updateRetailerPlatformDto: UpdateRetailerPlatformDto,
     file?: Express.Multer.File,
   ) {
+    const safeUpdatePayload: Partial<UpdateRetailerPlatformDto> = {};
+
+    if (updateRetailerPlatformDto.platformLabel !== undefined) {
+      safeUpdatePayload.platformLabel = updateRetailerPlatformDto.platformLabel;
+    }
+    if (updateRetailerPlatformDto.title !== undefined) {
+      safeUpdatePayload.title = updateRetailerPlatformDto.title;
+    }
+    if (updateRetailerPlatformDto.highlightedTitle !== undefined) {
+      safeUpdatePayload.highlightedTitle =
+        updateRetailerPlatformDto.highlightedTitle;
+    }
+    if (updateRetailerPlatformDto.description !== undefined) {
+      safeUpdatePayload.description = updateRetailerPlatformDto.description;
+    }
+    if (updateRetailerPlatformDto.imageLabel !== undefined) {
+      safeUpdatePayload.imageLabel = updateRetailerPlatformDto.imageLabel;
+    }
+    if (updateRetailerPlatformDto.imageTitle !== undefined) {
+      safeUpdatePayload.imageTitle = updateRetailerPlatformDto.imageTitle;
+    }
+    if (updateRetailerPlatformDto.features !== undefined) {
+      safeUpdatePayload.features = updateRetailerPlatformDto.features;
+    }
+
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
-      updateRetailerPlatformDto.image = uploadedFile.url;
+      safeUpdatePayload.image = uploadedFile.url;
     }
 
     const result = await this.retailerPlatformModel.findByIdAndUpdate(
       id,
-      updateRetailerPlatformDto,
+      { $set: safeUpdatePayload },
       { new: true },
     );
     return result;
