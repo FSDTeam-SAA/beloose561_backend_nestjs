@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -30,9 +31,19 @@ const ToBoolean = () =>
     return value === 'true';
   });
 
+// multipart/form-data sends a single value as a string and repeated values
+// as an array, so accept both a comma-separated string and a real array.
+const ToStringArray = () =>
+  Transform(({ value }) => {
+    if (value === '' || value === undefined) return undefined;
+    const list = Array.isArray(value) ? value : String(value).split(',');
+    return list.map((v) => String(v).trim()).filter(Boolean);
+  });
+
 export class CreateInventoryDto {
   @ApiPropertyOptional({
-    description: 'Approved master database cigar id used to prefill product data',
+    description:
+      'Approved master database cigar id used to prefill product data',
   })
   @IsOptional()
   @EmptyToUndefined()
@@ -87,6 +98,17 @@ export class CreateInventoryDto {
   @EmptyToUndefined()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({
+    example: ['Aged Rum', 'Single Malt Scotch', 'Dark Chocolate'],
+    description:
+      'Suggested pairings shown under "Perfect Pairings" (comma-separated string or array)',
+  })
+  @IsOptional()
+  @ToStringArray()
+  @IsArray()
+  @IsString({ each: true })
+  pairingSuggestions?: string[];
 
   @ApiPropertyOptional({
     description: 'Humidor id where this inventory is stored',

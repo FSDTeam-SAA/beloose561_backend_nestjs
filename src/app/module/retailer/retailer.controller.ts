@@ -9,8 +9,11 @@ import {
   Post,
   Put,
   Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -19,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { fileUpload } from '../../helpers/fileUploder';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
@@ -118,14 +122,26 @@ export class RetailerController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer', 'admin'))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'logo', maxCount: 1 },
+        { name: 'banner', maxCount: 1 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @HttpCode(HttpStatus.OK)
   async updateRetailerById(
     @Param('id') id: string,
     @Body() updateRetailerDto: UpdateRetailerDto,
+    @UploadedFiles()
+    files?: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] },
   ) {
     const result = await this.retailerService.updateRetailer(
       id,
       updateRetailerDto,
+      files,
     );
     return {
       message: 'Retailer updated successfully',

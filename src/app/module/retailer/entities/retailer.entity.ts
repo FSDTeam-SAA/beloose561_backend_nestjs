@@ -24,6 +24,9 @@ export class Retailer {
   logo!: string;
 
   @Prop()
+  banner!: string;
+
+  @Prop()
   description!: string;
 
   @Prop()

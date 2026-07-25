@@ -70,6 +70,22 @@ export class CreateRetailerDto {
   storeSlug?: string;
 
   @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  logo?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  banner?: string;
+
+  @ApiPropertyOptional({
     example: 'https://cdn.example.com/qrcode.png',
   })
   @IsOptional()

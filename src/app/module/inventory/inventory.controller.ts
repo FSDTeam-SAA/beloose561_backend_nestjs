@@ -67,6 +67,7 @@ export class InventoryController {
   @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
   @ApiQuery({ name: 'description', type: 'string', required: false })
   @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
   @ApiQuery({ name: 'status', type: 'string', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
@@ -91,6 +92,7 @@ export class InventoryController {
       'smokingTime',
       'description',
       'whyYoullLikeThis',
+      'pairingSuggestions',
       'status',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
@@ -373,6 +375,7 @@ export class InventoryController {
   @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
   @ApiQuery({ name: 'description', type: 'string', required: false })
   @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
   @ApiQuery({ name: 'status', type: 'string', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
@@ -397,6 +400,7 @@ export class InventoryController {
       'smokingTime',
       'description',
       'whyYoullLikeThis',
+      'pairingSuggestions',
       'status',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
@@ -430,7 +434,19 @@ export class InventoryController {
   @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
   @ApiQuery({ name: 'description', type: 'string', required: false })
   @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
-  @ApiQuery({ name: 'status', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
+  @ApiQuery({
+    name: 'minPrice',
+    type: 'number',
+    required: false,
+    description: 'Price range - low end',
+  })
+  @ApiQuery({
+    name: 'maxPrice',
+    type: 'number',
+    required: false,
+    description: 'Price range - high end',
+  })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
   @ApiQuery({ name: 'sortBy', type: 'string', required: false })
@@ -454,13 +470,18 @@ export class InventoryController {
       'smokingTime',
       'description',
       'whyYoullLikeThis',
-      'status',
+      'pairingSuggestions',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const { minPrice, maxPrice } = req.query;
     const result = await this.inventoryService.getInventorys(
       slug,
       filters,
       options,
+      {
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      },
     );
 
     return {
