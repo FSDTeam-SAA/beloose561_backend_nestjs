@@ -481,7 +481,8 @@ export class InventoryService {
         size: inventory.size,
         image: inventory.image,
         description: inventory.description,
-        status: 'approved',
+        price: inventory.price,
+        status: 'active',
         submittedByRetailer: inventory.retailerId,
       });
 

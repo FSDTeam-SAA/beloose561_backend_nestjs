@@ -1,171 +1,141 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
-  IsArray,
+  IsBoolean,
+  IsDateString,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
-
-export enum CigarStrength {
-  MILD = 'mild',
-  MEDIUM = 'medium',
-  MEDIUM_FULL = 'medium-full',
-  FULL = 'full',
-}
+import { CreateInventoryDto } from '../../inventory/dto/create-inventory.dto';
 
 export enum MasterDatabaseStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  DENIED = 'denied',
+  ACTIVE = 'active',
+  UNDER_REVIEW = 'under_review',
+  OUT_OF_STOCK = 'out_of_stock',
+  INACTIVE = 'inactive',
 }
 
-export class CreateMasterDatabaseDto {
-  @ApiProperty({
-    example: 'Padron 1964 Natural Toro',
-    description: 'Cigar name',
-  })
+export class CreateMasterDatabaseDto extends OmitType(CreateInventoryDto, [
+  'masterCigarId',
+  'humidorId',
+  'shelfName',
+] as const) {
+  @ApiProperty({ example: 'Padron 1964 Natural Toro' })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({
-    example: 'Padron',
-    description: 'Brand name',
-  })
+  @ApiProperty({ example: 'Padron' })
   @IsString()
   @IsNotEmpty()
   brand!: string;
 
-  @ApiPropertyOptional({
-    example: '1964 Anniversary',
-  })
+  @ApiPropertyOptional({ example: 'Best Connecticut we carry' })
   @IsOptional()
   @IsString()
-  productLine?: string;
+  staffPickNote?: string;
 
-  @ApiPropertyOptional({
-    example: 'Padron Cigars',
-  })
+  @ApiPropertyOptional({ example: 'Mike' })
   @IsOptional()
   @IsString()
-  manufacturer?: string;
+  staffPickBy?: string;
 
-  @ApiPropertyOptional({
-    example: 'Nicaragua',
-  })
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  staffPickAddedAt?: string;
+
+  @ApiPropertyOptional({ example: 'Just arrived' })
   @IsOptional()
   @IsString()
-  country?: string;
+  newArrivalNote?: string;
 
-  @ApiPropertyOptional({
-    example: 'Natural Colorado',
-  })
-  @IsOptional()
-  @IsString()
-  wrapper?: string;
-
-  @ApiPropertyOptional({
-    example: 'Nicaraguan',
-  })
-  @IsOptional()
-  @IsString()
-  binder?: string;
-
-  @ApiPropertyOptional({
-    example: 'Nicaraguan',
-  })
-  @IsOptional()
-  @IsString()
-  filler?: string;
-
-  @ApiPropertyOptional({
-    enum: CigarStrength,
-    example: CigarStrength.MEDIUM,
-  })
-  @IsOptional()
-  @IsEnum(CigarStrength)
-  strength?: CigarStrength;
-
-  @ApiPropertyOptional({
-    example: 'Toro',
-  })
-  @IsOptional()
-  @IsString()
-  size?: string;
-
-  @ApiPropertyOptional({
-    example: 52,
-  })
+  @ApiPropertyOptional({ default: 30 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
-  ringGauge?: number;
+  @IsInt()
+  @Min(0)
+  autoRemoveDays?: number;
 
-  @ApiPropertyOptional({
-    example: '6.5 inches',
-  })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  length?: string;
+  @IsDateString()
+  newArrivalExpiresAt?: string;
 
-  @ApiPropertyOptional({
-    type: [String],
-    example: ['Chocolate', 'Coffee', 'Earth'],
-  })
+  @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string'
-      ? value.split(',').map((item: string) => item.trim())
-      : value,
-  )
-  @IsArray()
-  @IsString({ each: true })
-  flavorNotes?: string[];
+  @IsDateString()
+  featuredDate?: string;
 
-  @ApiPropertyOptional({
-    example: '60-75 minutes',
-  })
+  @ApiPropertyOptional({ example: 20 })
   @IsOptional()
-  @IsString()
-  smokingTime?: string;
-
-  @ApiPropertyOptional({
-    type: String,
-    format: 'binary',
-  })
-  @IsOptional()
-  @IsString()
-  image?: string;
-
-  @ApiPropertyOptional({
-    example: 'A premium handmade Nicaraguan cigar.',
-  })
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @ApiPropertyOptional({
-    example: 'Perfect balance of chocolate, coffee and cedar notes.',
-  })
-  @IsOptional()
-  @IsString()
-  whyYoullLikeThis?: string;
-
-  @ApiPropertyOptional({ example: 25.99 })
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  price!: number;
+  featuredPrice?: number;
 
-  @ApiPropertyOptional({
-    enum: MasterDatabaseStatus,
-    default: MasterDatabaseStatus.APPROVED,
-  })
+  @ApiPropertyOptional({ enum: MasterDatabaseStatus })
   @IsOptional()
   @IsEnum(MasterDatabaseStatus)
   status?: MasterDatabaseStatus;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  totalSearches?: number;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  totalViews?: number;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  totalSold?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  lastSoldDate?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'boolean' ? value : value === 'true',
+  )
+  @IsBoolean()
+  isOnDiscount?: boolean;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  discountPercentage?: number;
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  discountPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  discountedAt?: string;
 }

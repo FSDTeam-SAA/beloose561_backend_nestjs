@@ -47,19 +47,12 @@ export class MasterDatabaseService {
     const whereConditions = buildWhereConditions(params, [
       'name',
       'brand',
-      'productLine',
-      'manufacturer',
-      'country',
       'wrapper',
-      'binder',
-      'filler',
       'strength',
       'size',
-      'length',
-      'flavorNotes',
       'smokingTime',
       'description',
-      'whyYoullLikeThis',
+      'pairingSuggestions',
       'status',
     ]);
 
