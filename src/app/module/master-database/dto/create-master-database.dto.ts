@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Min,
 } from 'class-validator';
 
 export enum CigarStrength {
@@ -153,12 +154,11 @@ export class CreateMasterDatabaseDto {
   @IsString()
   whyYoullLikeThis?: string;
 
-  @ApiPropertyOptional({
-    example: '$20 - $30',
-  })
-  @IsOptional()
-  @IsString()
-  priceRange?: string;
+  @ApiPropertyOptional({ example: 25.99 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  price!: number;
 
   @ApiPropertyOptional({
     enum: MasterDatabaseStatus,

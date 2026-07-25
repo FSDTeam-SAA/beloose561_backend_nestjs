@@ -36,7 +36,7 @@ export class MasterDatabase {
   filler!: string;
 
   @Prop({
-    enum: ['mild', 'medium', 'full'],
+    enum: ['mild', 'medium', 'full', 'medium-full'],
   })
   strength!: string;
 
@@ -70,9 +70,9 @@ export class MasterDatabase {
   whyYoullLikeThis!: string;
   // Plain language description
 
-  @Prop()
-  priceRange!: string;
-  // "$20-30"
+  @Prop({ required: true, min: 0 })
+  price!: number;
+  // "$20"
 
   @Prop({
     enum: ['pending', 'approved', 'denied'],
