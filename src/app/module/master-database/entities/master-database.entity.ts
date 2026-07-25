@@ -36,7 +36,7 @@ export class MasterDatabase {
   filler!: string;
 
   @Prop({
-    enum: ['mild', 'medium', 'full'],
+    enum: ['mild', 'medium-full', 'medium', 'full'],
   })
   strength!: string;
 

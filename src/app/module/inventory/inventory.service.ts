@@ -97,6 +97,9 @@ export class InventoryService {
           strength: masterCigar.strength,
           wrapper: masterCigar.wrapper,
           size: masterCigar.size,
+          smokingTime:
+            this.normalizeSmokingTime(masterCigar.smokingTime) ??
+            createInventoryDto.smokingTime,
           image: masterCigar.image,
           description: masterCigar.description,
         }
@@ -635,10 +638,12 @@ export class InventoryService {
       brand: item.brand,
       strength: item.strength,
       size: item.size,
+      smokingTime: item.smokingTime,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
       description: item.description,
+      pairingSuggestions: item.pairingSuggestions,
       staffPickNote: item.staffPickNote,
       staffPickBy: item.staffPickBy,
       staffPickAddedAt: item.staffPickAddedAt,
@@ -778,9 +783,11 @@ export class InventoryService {
       brand: item.brand,
       strength: item.strength,
       size: item.size,
+      smokingTime: item.smokingTime,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
+      pairingSuggestions: item.pairingSuggestions,
       newArrivalNote: item.newArrivalNote,
       arrivalDate: item.arrivalDate,
       daysShowing,
@@ -923,6 +930,16 @@ export class InventoryService {
     return d;
   }
 
+  private normalizeSmokingTime(value?: string) {
+    if (!value) return undefined;
+    const minutes = Number(value.match(/\d+/)?.[0]);
+    if (!Number.isFinite(minutes)) return undefined;
+    if (minutes >= 120) return '120+';
+    if (minutes >= 90) return '90';
+    if (minutes >= 60) return '60';
+    return '30';
+  }
+
   private formatDailyFeatured(item: Record<string, any>) {
     const humidor = item.humidorId;
     const featuredPrice = item.featuredPrice;
@@ -933,10 +950,12 @@ export class InventoryService {
       strength: item.strength,
       size: item.size,
       wrapper: item.wrapper,
+      smokingTime: item.smokingTime,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
       description: item.description,
+      pairingSuggestions: item.pairingSuggestions,
       featuredNote: item.featuredNote,
       featuredDate: item.featuredDate,
       featuredPrice,
@@ -1193,9 +1212,11 @@ export class InventoryService {
       strength: item.strength,
       wrapper: item.wrapper,
       size: item.size,
+      smokingTime: item.smokingTime,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
+      pairingSuggestions: item.pairingSuggestions,
       inStock: item.quantity > 0,
       shelfName: item.shelfName,
       humidorName:
@@ -1314,7 +1335,8 @@ export class InventoryService {
     const strengthScale: Record<string, number> = {
       mild: 1,
       medium: 2,
-      full: 3,
+      'medium-full': 3,
+      full: 4,
     };
 
     if (dto.strength && item.strength) {
@@ -1359,9 +1381,9 @@ export class InventoryService {
     }
 
     if (dto.smokingTime) {
-      const masterSmokingTime: string | undefined =
-        item.masterCigarId?.smokingTime;
-      const match = masterSmokingTime?.match(/\d+/);
+      const itemSmokingTime: string | undefined =
+        item.smokingTime || item.masterCigarId?.smokingTime;
+      const match = itemSmokingTime?.match(/\d+/);
       if (match) {
         const actualMinutes = Number(match[0]);
         const wantedMinutes =
@@ -1468,7 +1490,7 @@ export class InventoryService {
       image: anyItem.image,
       description: anyItem.description,
       flavorNotes: master?.flavorNotes,
-      smokingTime: master?.smokingTime,
+      smokingTime: anyItem.smokingTime ?? master?.smokingTime,
       pairingSuggestions: anyItem.pairingSuggestions,
       price: anyItem.price,
       displayPrice,
@@ -1608,8 +1630,9 @@ export class InventoryService {
         wrapper: item.wrapper,
         size: item.size,
         image: item.image,
-        smokingTime: master?.smokingTime,
+        smokingTime: item.smokingTime ?? master?.smokingTime,
         flavorNotes: master?.flavorNotes,
+        pairingSuggestions: item.pairingSuggestions,
         price: item.price,
         quantity: item.quantity,
         location: {
@@ -1637,7 +1660,7 @@ export class InventoryService {
     if (!current) throw new HttpException('Inventory not found', 404);
 
     const projection =
-      'name brand strength wrapper size image price quantity status';
+      'name brand strength wrapper size smokingTime image price quantity status pairingSuggestions';
     const baseQuery = {
       retailerId: retailer._id,
       status: 'active',
@@ -1700,7 +1723,9 @@ export class InventoryService {
         _id: { $ne: current._id },
         price: { $gt: current.price },
       })
-      .select('name brand strength wrapper size image price quantity status')
+      .select(
+        'name brand strength wrapper size smokingTime image price quantity status pairingSuggestions',
+      )
       .sort({ price: -1 })
       .limit(3)
       .lean();

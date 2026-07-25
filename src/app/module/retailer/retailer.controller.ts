@@ -134,6 +134,7 @@ export class RetailerController {
   @HttpCode(HttpStatus.OK)
   async updateRetailerById(
     @Param('id') id: string,
+    @Req() req: Request,
     @Body() updateRetailerDto: UpdateRetailerDto,
     @UploadedFiles()
     files?: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] },
@@ -142,6 +143,7 @@ export class RetailerController {
       id,
       updateRetailerDto,
       files,
+      req.user,
     );
     return {
       message: 'Retailer updated successfully',
