@@ -2,6 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
+import { fileUpload } from '../../helpers/fileUploder';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
 import {
@@ -101,7 +102,21 @@ export class RetailerService {
     return retailer;
   }
 
-  async updateRetailer(id: string, updateRetailerDto: UpdateRetailerDto) {
+  async updateRetailer(
+    id: string,
+    updateRetailerDto: UpdateRetailerDto,
+    files?: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] },
+  ) {
+    if (files?.logo?.[0]) {
+      const uploadedLogo = await fileUpload.uploadToCloudinary(files.logo[0]);
+      updateRetailerDto.logo = uploadedLogo.url;
+    }
+    if (files?.banner?.[0]) {
+      const uploadedBanner = await fileUpload.uploadToCloudinary(
+        files.banner[0],
+      );
+      updateRetailerDto.banner = uploadedBanner.url;
+    }
     const retailer = await this.retailerModel.findByIdAndUpdate(
       id,
       updateRetailerDto,

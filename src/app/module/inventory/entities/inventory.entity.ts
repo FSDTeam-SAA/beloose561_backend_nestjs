@@ -49,6 +49,10 @@ export class Inventory {
   @Prop()
   description!: string;
 
+  @Prop({ type: [String], default: [] })
+  pairingSuggestions!: string[];
+  // e.g. ["Aged Rum", "Single Malt Scotch", "Dark Chocolate"]
+
   // Location
   @Prop({
     type: mongoose.Schema.Types.ObjectId,

@@ -174,6 +174,7 @@ export class InventoryService {
         'smokingTime',
         'description',
         'whyYoullLikeThis',
+        'pairingSuggestions',
         'status',
       ],
       {
@@ -216,6 +217,7 @@ export class InventoryService {
       'smokingTime',
       'description',
       'whyYoullLikeThis',
+      'pairingSuggestions',
       'status',
     ]);
     const result = await this.inventoryRepository
@@ -239,14 +241,26 @@ export class InventoryService {
     shopslag: string,
     params: IFilterParams,
     options: IOptions,
+    priceRange?: { minPrice?: number; maxPrice?: number },
   ) {
     const retailer = await this.retailerModel.findOne({ storeSlug: shopslag });
     if (!retailer) throw new HttpException('Retailer not found', 404);
     const user = await this.userModel.findById(retailer.userId);
     if (!user) throw new HttpException('User not found', 404);
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    // Public storefront route - only surface cigars the retailer has
+    // approved for customer view, regardless of any status passed in.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { status: _ignoredStatus, ...customerParams } = params;
+
+    const priceCondition: Record<string, number> = {};
+    if (priceRange?.minPrice !== undefined)
+      priceCondition.$gte = priceRange.minPrice;
+    if (priceRange?.maxPrice !== undefined)
+      priceCondition.$lte = priceRange.maxPrice;
+
     const whereConditions = buildWhereConditions(
-      params,
+      customerParams,
       [
         'name',
         'brand',
@@ -263,11 +277,16 @@ export class InventoryService {
         'smokingTime',
         'description',
         'whyYoullLikeThis',
-        'status',
+        'pairingSuggestions',
       ],
       {
         userId: user._id,
         retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+        ...(Object.keys(priceCondition).length > 0
+          ? { price: priceCondition }
+          : {}),
       },
     );
     const result = await this.inventoryRepository
@@ -1450,6 +1469,7 @@ export class InventoryService {
       description: anyItem.description,
       flavorNotes: master?.flavorNotes,
       smokingTime: master?.smokingTime,
+      pairingSuggestions: anyItem.pairingSuggestions,
       price: anyItem.price,
       displayPrice,
       isOnDiscount: anyItem.isOnDiscount,
@@ -1602,5 +1622,87 @@ export class InventoryService {
         whyThisCigar,
       },
     };
+  }
+
+  async getRelatedCigars(shopSlug: string, id: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const current = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!current) throw new HttpException('Inventory not found', 404);
+
+    const projection =
+      'name brand strength wrapper size image price quantity status';
+    const baseQuery = {
+      retailerId: retailer._id,
+      status: 'active',
+      quantity: { $gt: 0 },
+      _id: { $ne: current._id },
+    };
+
+    // "You Might Also Enjoy" - same brand or same wrapper, most popular first
+    const youMightAlsoEnjoy = await this.inventoryRepository
+      .find({
+        ...baseQuery,
+        $or: [{ brand: current.brand }, { wrapper: current.wrapper }],
+      })
+      .select(projection)
+      .sort({ totalSold: -1, totalViews: -1 })
+      .limit(4)
+      .lean();
+
+    // "Looking for Something More Exclusive?" - pricier picks, most expensive first
+    const moreExclusive = await this.inventoryRepository
+      .find({ ...baseQuery, price: { $gt: current.price } })
+      .select(projection)
+      .sort({ price: -1 })
+      .limit(3)
+      .lean();
+
+    // "Similar Cigars" - same strength & wrapper, useful as an out-of-stock alternative
+    const similarCigars = await this.inventoryRepository
+      .find({
+        ...baseQuery,
+        strength: current.strength,
+        wrapper: current.wrapper,
+      })
+      .select(projection)
+      .sort({ price: 1 })
+      .limit(4)
+      .lean();
+
+    return { youMightAlsoEnjoy, moreExclusive, similarCigars };
+  }
+
+  async getMoreExclusiveCigars(shopSlug: string, id: string) {
+    const retailer = await this.retailerModel.findOne({
+      storeSlug: shopSlug,
+    });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const current = await this.inventoryRepository.findOne({
+      _id: id,
+      retailerId: retailer._id,
+    });
+    if (!current) throw new HttpException('Inventory not found', 404);
+
+    // "Looking for Something More Exclusive?" - pricier picks, most expensive first
+    return this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+        _id: { $ne: current._id },
+        price: { $gt: current.price },
+      })
+      .select('name brand strength wrapper size image price quantity status')
+      .sort({ price: -1 })
+      .limit(3)
+      .lean();
   }
 }
