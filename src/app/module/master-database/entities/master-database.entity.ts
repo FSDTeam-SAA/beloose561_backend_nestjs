@@ -7,58 +7,21 @@ export type MasterDatabaseDocument = HydratedDocument<MasterDatabase>;
 export class MasterDatabase {
   @Prop({ required: true })
   name!: string;
-  // "Padron 1964 Natural Toro"
 
   @Prop({ required: true })
   brand!: string;
-  // "Padron"
 
-  @Prop()
-  productLine!: string;
-  // "1964 Anniversary"
-
-  @Prop()
-  manufacturer!: string;
-  // "Padron Cigars"
-
-  @Prop()
-  country!: string;
-  // "Nicaragua"
-
-  @Prop()
-  wrapper!: string;
-  // "Natural Colorado"
-
-  @Prop()
-  binder!: string;
-
-  @Prop()
-  filler!: string;
-
-  @Prop({
-    enum: ['mild', 'medium', 'full', 'medium-full'],
-  })
+  @Prop({ enum: ['mild', 'medium', 'full', 'medium-full'] })
   strength!: string;
 
   @Prop()
+  wrapper!: string;
+
+  @Prop()
   size!: string;
-  // "Toro", "Robusto", "Churchill"
 
-  @Prop()
-  ringGauge!: number;
-  // 52
-
-  @Prop()
-  length!: string;
-  // "6.5 inches"
-
-  @Prop([String])
-  flavorNotes!: string[];
-  // ["Chocolate", "Earth", "Coffee"]
-
-  @Prop()
+  @Prop({ enum: ['30', '60', '90', '120+'] })
   smokingTime!: string;
-  // "60-75 minutes"
 
   @Prop()
   image!: string;
@@ -66,21 +29,108 @@ export class MasterDatabase {
   @Prop()
   description!: string;
 
-  @Prop()
-  whyYoullLikeThis!: string;
-  // Plain language description
+  @Prop({ type: [String], default: [] })
+  pairingSuggestions!: string[];
+
+  @Prop({ default: 0, min: 0 })
+  quantity!: number;
 
   @Prop({ required: true, min: 0 })
   price!: number;
-  // "$20"
+
+  @Prop({ default: false })
+  isStaffPick!: boolean;
+
+  @Prop()
+  staffPickNote!: string;
+
+  @Prop()
+  staffPickBy!: string;
+
+  @Prop()
+  staffPickAddedAt!: Date;
+
+  @Prop({ default: false })
+  isNewArrival!: boolean;
+
+  @Prop()
+  arrivalDate!: Date;
+
+  @Prop()
+  newArrivalNote!: string;
+
+  @Prop({ default: 30 })
+  autoRemoveDays!: number;
+
+  @Prop()
+  newArrivalExpiresAt!: Date;
+
+  @Prop({ default: false })
+  isDailyFeatured!: boolean;
+
+  @Prop()
+  featuredNote!: string;
+
+  @Prop()
+  featuredDate!: Date;
+
+  @Prop({ min: 0 })
+  featuredPrice!: number;
 
   @Prop({
-    enum: ['pending', 'approved', 'denied'],
-    default: 'approved',
+    enum: ['active', 'under_review', 'out_of_stock', 'inactive'],
+    default: 'active',
   })
   status!: string;
 
-  // Retailer Submit করলে
+  @Prop({ default: 5, min: 0 })
+  lowStockThreshold!: number;
+
+  @Prop({ default: 0 })
+  totalSearches!: number;
+
+  @Prop({ default: 0 })
+  totalViews!: number;
+
+  @Prop()
+  lastSoldDate!: Date;
+
+  @Prop({ default: 0 })
+  totalSold!: number;
+
+  @Prop({
+    type: [
+      {
+        quantitySold: { type: Number, required: true, min: 1 },
+        unitPrice: { type: Number, required: true, min: 0 },
+        totalAmount: { type: Number, required: true, min: 0 },
+        soldAt: { type: Date, required: true },
+      },
+    ],
+    default: [],
+  })
+  salesHistory!: {
+    quantitySold: number;
+    unitPrice: number;
+    totalAmount: number;
+    soldAt: Date;
+  }[];
+
+  @Prop()
+  lastLowStockNotificationAt!: Date;
+
+  @Prop({ default: false })
+  isOnDiscount!: boolean;
+
+  @Prop({ min: 0, max: 100 })
+  discountPercentage!: number;
+
+  @Prop({ min: 0 })
+  discountPrice!: number;
+
+  @Prop()
+  discountedAt!: Date;
+
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Retailer',

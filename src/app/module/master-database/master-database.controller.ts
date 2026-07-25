@@ -62,19 +62,12 @@ export class MasterDatabaseController {
   @ApiQuery({ name: 'status', type: 'string', required: false })
   @ApiQuery({ name: 'name', type: 'string', required: false })
   @ApiQuery({ name: 'brand', type: 'string', required: false })
-  @ApiQuery({ name: 'productLine', type: 'string', required: false })
-  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
-  @ApiQuery({ name: 'country', type: 'string', required: false })
   @ApiQuery({ name: 'wrapper', type: 'string', required: false })
-  @ApiQuery({ name: 'binder', type: 'string', required: false })
-  @ApiQuery({ name: 'filler', type: 'string', required: false })
   @ApiQuery({ name: 'strength', type: 'string', required: false })
   @ApiQuery({ name: 'size', type: 'string', required: false })
-  @ApiQuery({ name: 'length', type: 'string', required: false })
-  @ApiQuery({ name: 'flavorNotes', type: 'string', required: false })
   @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
   @ApiQuery({ name: 'description', type: 'string', required: false })
-  @ApiQuery({ name: 'whyYoullLikeThis', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
   @ApiQuery({ name: 'sortBy', type: 'string', required: false })
@@ -85,19 +78,12 @@ export class MasterDatabaseController {
       'searchTerm',
       'name',
       'brand',
-      'productLine',
-      'manufacturer',
-      'country',
       'wrapper',
-      'binder',
-      'filler',
       'strength',
       'size',
-      'length',
-      'flavorNotes',
       'smokingTime',
       'description',
-      'whyYoullLikeThis',
+      'pairingSuggestions',
       'status',
     ]);
     const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
