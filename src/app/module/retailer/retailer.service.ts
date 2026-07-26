@@ -105,6 +105,14 @@ export class RetailerService {
     return retailer;
   }
 
+  async getRetailerBySlug(slug: string) {
+    const retailer = await this.retailerModel
+      .findOne({ storeSlug: slug })
+      .populate('userId');
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    return retailer;
+  }
+
   async updateRetailer(
     id: string,
     updateRetailerDto: UpdateRetailerDto,

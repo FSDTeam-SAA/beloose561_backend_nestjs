@@ -146,6 +146,13 @@ export class InventoryService {
         { new: true },
       );
     }
+    if (!user.isInventory) {
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { isInventory: true },
+        { new: true },
+      );
+    }
     return inventory;
   }
 

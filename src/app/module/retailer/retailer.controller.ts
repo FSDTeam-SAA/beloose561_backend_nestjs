@@ -117,6 +117,17 @@ export class RetailerController {
     };
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Get retailer by slug' })
+  @HttpCode(HttpStatus.OK)
+  async getRetailerBySlug(@Param('slug') slug: string) {
+    const result = await this.retailerService.getRetailerBySlug(slug);
+    return {
+      message: 'Retailer retrieved successfully',
+      data: result,
+    };
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update retailer by id' })
   @ApiConsumes('multipart/form-data')

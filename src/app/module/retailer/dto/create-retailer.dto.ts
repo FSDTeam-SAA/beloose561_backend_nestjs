@@ -1,11 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsPhoneNumber,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export enum RetailerStatus {
   PENDING = 'pending',
@@ -45,7 +39,7 @@ export class CreateRetailerDto {
   @ApiProperty({
     example: '+8801712345678',
   })
-  @IsPhoneNumber()
+  @IsString()
   phoneNumber!: string;
 
   @ApiProperty({

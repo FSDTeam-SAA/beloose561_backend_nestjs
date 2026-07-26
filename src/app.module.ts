@@ -20,6 +20,7 @@ import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { UserModule } from './app/module/user/user.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { RetailerHowitworkModule } from './app/module/retailer-howitwork/retailer-howitwork.module';
+import { RetailerBenefitsModule } from './app/module/retailer-benefits/retailer-benefits.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { RetailerHowitworkModule } from './app/module/retailer-howitwork/retaile
     RetailerAboutModule,
     RetailerPlatformModule,
     RetailerHowitworkModule,
+    RetailerBenefitsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

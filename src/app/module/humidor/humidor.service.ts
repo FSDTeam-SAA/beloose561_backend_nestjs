@@ -43,6 +43,14 @@ export class HumidorService {
         { new: true },
       );
     }
+
+    if (!user.isHumidor) {
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { isHumidor: true },
+        { new: true },
+      );
+    }
     return humidor;
   }
 
