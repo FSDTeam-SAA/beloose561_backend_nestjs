@@ -9,12 +9,12 @@ import {
   buildStoreQrTarget,
   generateAndUploadQrCode,
 } from '../../helpers/qrcodeGenerator';
+import type { JwtPayload } from '../../middlewares/auth.guard';
 import { Qrcode, QrcodeDocument } from '../qrcodes/entities/qrcode.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
 import { UpdateRetailerDto } from './dto/update-retailer.dto';
 import { Retailer, RetailerDocument } from './entities/retailer.entity';
-import type { JwtPayload } from '../../middlewares/auth.guard';
 
 @Injectable()
 export class RetailerService {
@@ -63,7 +63,9 @@ export class RetailerService {
   }
 
   async getMyRetailer(userId: string) {
-    const retailer = await this.retailerModel.findOne({ userId });
+    const retailer = await this.retailerModel
+      .findOne({ userId })
+      .populate('userId');
     if (!retailer) throw new HttpException('Retailer not found', 404);
     return retailer;
   }
