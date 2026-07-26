@@ -6,6 +6,10 @@ import config from 'src/app/config';
 import Stripe from 'stripe';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import {
+  Retailer,
+  RetailerDocument,
+} from '../retailer/entities/retailer.entity';
+import {
   Subscribe,
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
@@ -25,6 +29,9 @@ export class WebhookService {
 
     @InjectModel(Subscribe.name)
     private readonly subscribeModel: Model<SubscribeDocument>,
+
+    @InjectModel(Retailer.name)
+    private readonly retailerModel: Model<RetailerDocument>,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -121,6 +128,14 @@ export class WebhookService {
         plan.user.push(payment.user);
         await plan.save();
       }
+
+      await this.retailerModel.updateOne(
+        { userId: payment.user },
+        {
+          subscriptionPlan: plan.plan,
+          subscriptionStatus: 'active',
+        },
+      );
 
       return res.json({
         received: true,
