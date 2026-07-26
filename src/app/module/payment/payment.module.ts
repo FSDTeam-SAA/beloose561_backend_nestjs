@@ -9,6 +9,7 @@ import {
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from './entities/payment.entity';
 import { SubscribePaymentCronService } from 'src/app/helpers/subscribePayment.cron';
+import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SubscribePaymentCronService } from 'src/app/helpers/subscribePayment.cr
       { name: Subscribe.name, schema: SubscribeSchema },
       { name: User.name, schema: UserSchema },
       { name: Payment.name, schema: PaymentSchema },
+      { name: Retailer.name, schema: RetailerSchema },
     ]),
   ],
   controllers: [PaymentController],

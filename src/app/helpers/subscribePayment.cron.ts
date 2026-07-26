@@ -3,6 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import cron from 'node-cron';
 import {
+  Retailer,
+  RetailerDocument,
+} from 'src/app/module/retailer/entities/retailer.entity';
+import {
   Subscribe,
   SubscribeDocument,
 } from 'src/app/module/subscribe/entities/subscribe.entity';
@@ -16,6 +20,8 @@ export class SubscribePaymentCronService implements OnModuleInit {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Subscribe.name)
     private readonly subscribeModel: Model<SubscribeDocument>,
+    @InjectModel(Retailer.name)
+    private readonly retailerModel: Model<RetailerDocument>,
   ) {}
 
   onModuleInit() {
@@ -40,6 +46,11 @@ export class SubscribePaymentCronService implements OnModuleInit {
       user.isSubscription = false;
       user.subscriptionExpiry = null;
       await user.save();
+
+      await this.retailerModel.updateOne(
+        { userId: user._id },
+        { subscriptionPlan: 'none', subscriptionStatus: 'inactive' },
+      );
     }
 
     this.logger.log(
