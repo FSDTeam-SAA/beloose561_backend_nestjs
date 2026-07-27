@@ -21,6 +21,8 @@ import { UserModule } from './app/module/user/user.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { RetailerHowitworkModule } from './app/module/retailer-howitwork/retailer-howitwork.module';
 import { RetailerBenefitsModule } from './app/module/retailer-benefits/retailer-benefits.module';
+import { NotifationModule } from './app/module/notifation/notifation.module';
+import { SettingsModule } from './app/module/settings/settings.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { RetailerBenefitsModule } from './app/module/retailer-benefits/retailer-
     RetailerPlatformModule,
     RetailerHowitworkModule,
     RetailerBenefitsModule,
+    NotifationModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

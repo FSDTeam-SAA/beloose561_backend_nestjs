@@ -9,6 +9,7 @@ import {
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from './entities/payment.entity';
 import { SubscribePaymentCronService } from 'src/app/helpers/subscribePayment.cron';
+import { NotifationModule } from '../notifation/notifation.module';
 import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 
 @Module({
@@ -19,6 +20,7 @@ import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
       { name: Payment.name, schema: PaymentSchema },
       { name: Retailer.name, schema: RetailerSchema },
     ]),
+    NotifationModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService, SubscribePaymentCronService],

@@ -174,4 +174,41 @@ export class DashboardController {
     );
     return { message: 'Total earning chart fetched successfully', data };
   }
+
+  @Get('admin/overview')
+  @ApiOperation({
+    summary:
+      'Admin overview — total retailers, approved retailers, pending products, master database size, and total earnings',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async getAdminOverview() {
+    const result = await this.dashboardService.dashboardOverview();
+
+    return {
+      message: 'Admin overview retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('admin/revenue')
+  @ApiOperation({
+    summary:
+      'Retailer Revenue chart — monthly subscription revenue collected from retailers',
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, example: 2026 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async getAdminRevenue(@Query('year') year?: string) {
+    const result = await this.dashboardService.adminRevenue(
+      year ? Number(year) : undefined,
+    );
+
+    return {
+      message: 'Retailer revenue chart retrieved successfully',
+      data: result,
+    };
+  }
 }

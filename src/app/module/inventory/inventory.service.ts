@@ -14,6 +14,7 @@ import {
   MasterDatabase,
   MasterDatabaseDocument,
 } from '../master-database/entities/master-database.entity';
+import { NotifationService } from '../notifation/notifation.service';
 import {
   Retailer,
   RetailerDocument,
@@ -51,6 +52,7 @@ export class InventoryService {
     private readonly masterDatabaseModel: Model<MasterDatabaseDocument>,
     @InjectModel(Humidor.name)
     private readonly humidorModel: Model<HumidorDocument>,
+    private readonly notifationService: NotifationService,
   ) {}
 
   async createInventory(
@@ -146,13 +148,17 @@ export class InventoryService {
         { new: true },
       );
     }
-    if (!user.isInventory) {
-      await this.userModel.findByIdAndUpdate(
-        userId,
-        { isInventory: true },
-        { new: true },
+
+    if (inventory.status === 'under_review') {
+      await this.notifationService.notifyAdmin(
+        'new_product_submission',
+        'New Product Submission',
+        `${retailer.storeName} submitted "${inventory.name}" for review`,
+        inventory._id,
+        'newProductSubmissions',
       );
     }
+
     return inventory;
   }
 
@@ -478,6 +484,8 @@ export class InventoryService {
     const inventory = await this.inventoryRepository.findById(id);
     if (!inventory) throw new HttpException('Inventory not found', 404);
 
+    const wasUnderReview = inventory.status === 'under_review';
+
     // status 'active' e approve hocche ebong ei item MasterDatabase e nai (nijer deya info diye under_review chilo)
     if (status === 'active' && !inventory.masterCigarId) {
       const masterEntry = await this.masterDatabaseModel.create({
@@ -498,6 +506,17 @@ export class InventoryService {
 
     inventory.status = status;
     await inventory.save();
+
+    if (wasUnderReview && status === 'active') {
+      await this.notifationService.notifyRetailer(
+        inventory.userId,
+        'product_approved',
+        'Product Approved',
+        `Your product "${inventory.name}" has been approved`,
+        inventory._id,
+        'productApprovalNotifications',
+      );
+    }
 
     return inventory;
   }

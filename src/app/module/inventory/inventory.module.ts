@@ -7,6 +7,7 @@ import {
   MasterDatabase,
   MasterDatabaseSchema,
 } from '../master-database/entities/master-database.entity';
+import { NotifationModule } from '../notifation/notifation.module';
 import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Inventory, InventorySchema } from './entities/inventory.entity';
@@ -22,6 +23,7 @@ import { InventoryService } from './inventory.service';
       { name: User.name, schema: UserSchema },
       { name: Retailer.name, schema: RetailerSchema },
     ]),
+    NotifationModule,
   ],
   controllers: [InventoryController],
   providers: [
