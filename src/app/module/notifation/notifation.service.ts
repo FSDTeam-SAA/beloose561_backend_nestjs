@@ -148,4 +148,10 @@ export class NotifationService {
     );
     return { updated: result.modifiedCount };
   }
+
+  async deleteNotification(id: string) {
+    const result = await this.notifationModel.findByIdAndDelete(id);
+    if (!result) throw new HttpException('Notification not found', 404);
+    return result;
+  }
 }
