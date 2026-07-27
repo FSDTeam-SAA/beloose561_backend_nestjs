@@ -10,9 +10,10 @@ import {
   generateAndUploadQrCode,
 } from '../../helpers/qrcodeGenerator';
 import type { JwtPayload } from '../../middlewares/auth.guard';
+import { NotifationService } from '../notifation/notifation.service';
 import { Qrcode, QrcodeDocument } from '../qrcodes/entities/qrcode.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
-import { CreateRetailerDto } from './dto/create-retailer.dto';
+import { CreateRetailerDto, RetailerStatus } from './dto/create-retailer.dto';
 import { UpdateRetailerDto } from './dto/update-retailer.dto';
 import { Retailer, RetailerDocument } from './entities/retailer.entity';
 
@@ -25,6 +26,8 @@ export class RetailerService {
 
     @InjectModel(Qrcode.name)
     private readonly qrCodeModel: Model<QrcodeDocument>,
+
+    private readonly notifationService: NotifationService,
   ) {}
 
   async createRetailer(userId: string, createRetailerDto: CreateRetailerDto) {
@@ -57,6 +60,14 @@ export class RetailerService {
       userId,
       { isRelailer: true },
       { new: true },
+    );
+
+    await this.notifationService.notifyAdmin(
+      'new_retailer_signup',
+      'New Retailer Signup',
+      `${retailer.storeName} just signed up and is awaiting approval`,
+      retailer._id,
+      'newRetailerSignups',
     );
 
     return retailer;
@@ -155,6 +166,35 @@ export class RetailerService {
       { new: true },
     );
     if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    if (
+      actor?.role === 'admin' &&
+      updatePayload.status === RetailerStatus.APPROVED
+    ) {
+      await this.notifationService.notifyRetailer(
+        retailer.userId,
+        'retailer_approved',
+        'Retailer Approved',
+        `Your store "${retailer.storeName}" has been approved`,
+        retailer._id,
+        'retailerApprovalNotifications',
+      );
+    } else if (
+      actor?.role === 'admin' &&
+      updatePayload.status === RetailerStatus.REJECTED
+    ) {
+      await this.notifationService.notifyRetailer(
+        retailer.userId,
+        'retailer_rejected',
+        'Retailer Application Rejected',
+        retailer.rejectionReason
+          ? `Your store "${retailer.storeName}" was rejected: ${retailer.rejectionReason}`
+          : `Your store "${retailer.storeName}" was rejected`,
+        retailer._id,
+        'retailerApprovalNotifications',
+      );
+    }
+
     return retailer;
   }
 

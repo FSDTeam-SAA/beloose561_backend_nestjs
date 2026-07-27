@@ -1,18 +1,22 @@
 import { HttpException, Injectable } from '@nestjs/common';
 
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from '../user/entities/user.entity';
 import { Model } from 'mongoose';
-import { InventoryService } from '../inventory/inventory.service';
-import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import {
   Inventory,
   InventoryDocument,
 } from '../inventory/entities/inventory.entity';
+import { InventoryService } from '../inventory/inventory.service';
+import {
+  MasterDatabase,
+  MasterDatabaseDocument,
+} from '../master-database/entities/master-database.entity';
+import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import {
   Retailer,
   RetailerDocument,
 } from '../retailer/entities/retailer.entity';
+import { User, UserDocument } from '../user/entities/user.entity';
 
 const PAYMENT_DUE_SOON_DAYS = 3;
 const MONTH_LABELS = [
@@ -40,6 +44,8 @@ export class DashboardService {
     private readonly retailerModel: Model<RetailerDocument>,
     @InjectModel(Inventory.name)
     private readonly inventoryModel: Model<InventoryDocument>,
+    @InjectModel(MasterDatabase.name)
+    private readonly masterDatabaseModel: Model<MasterDatabaseDocument>,
     private readonly inventoryService: InventoryService,
   ) {}
 
@@ -588,6 +594,83 @@ export class DashboardService {
           items: newArrivals.data,
         },
       },
+    };
+  }
+
+  async dashboardOverview() {
+    const totalRetelier = await this.retailerModel.countDocuments();
+    const totalVerifiRetelier = await this.retailerModel.countDocuments({
+      status: 'approved',
+    });
+
+    const pendingProduct = await this.inventoryModel.countDocuments({
+      status: 'under_review',
+    });
+
+    const totalMasterDatabase = await this.masterDatabaseModel.countDocuments();
+
+    const totalEarnings = await this.paymentModel.aggregate([
+      {
+        $match: {
+          status: 'completed',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    return {
+      totalRetelier,
+      totalVerifiRetelier,
+      pendingProduct,
+      totalMasterDatabase,
+      totalEarnings:
+        totalEarnings.length > 0 ? totalEarnings[0].totalEarnings : 0,
+    };
+  }
+
+  // Admin dashboard "Retailer Revenue" chart - subscription revenue collected
+  // from retailers, broken down by month for the requested year.
+  async adminRevenue(year?: number) {
+    const targetYear = year ?? new Date().getFullYear();
+
+    const result = await this.paymentModel.aggregate([
+      {
+        $match: {
+          status: 'completed',
+          createdAt: {
+            $gte: new Date(`${targetYear}-01-01`),
+            $lt: new Date(`${targetYear + 1}-01-01`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: '$createdAt' } },
+          totalRevenue: { $sum: '$amount' },
+        },
+      },
+      { $sort: { '_id.month': 1 } },
+    ]);
+
+    const chartData = MONTH_LABELS.map((month, index) => {
+      const found = result.find((r) => r._id.month === index + 1);
+      return {
+        month,
+        revenue: found ? Number(Number(found.totalRevenue).toFixed(2)) : 0,
+      };
+    });
+
+    const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
+
+    return {
+      year: targetYear,
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      chartData,
     };
   }
 }

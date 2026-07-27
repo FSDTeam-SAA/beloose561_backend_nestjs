@@ -7,6 +7,10 @@ import {
   Inventory,
   InventorySchema,
 } from '../inventory/entities/inventory.entity';
+import {
+  MasterDatabase,
+  MasterDatabaseSchema,
+} from '../master-database/entities/master-database.entity';
 import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
@@ -18,6 +22,7 @@ import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
       { name: Payment.name, schema: PaymentSchema },
       { name: Retailer.name, schema: RetailerSchema },
       { name: Inventory.name, schema: InventorySchema },
+      { name: MasterDatabase.name, schema: MasterDatabaseSchema },
     ]),
     InventoryModule,
   ],

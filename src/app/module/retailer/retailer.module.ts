@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { NotifationModule } from '../notifation/notifation.module';
 import { Qrcode, QrcodeSchema } from '../qrcodes/entities/qrcode.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Retailer, RetailerSchema } from './entities/retailer.entity';
@@ -13,6 +14,7 @@ import { RetailerService } from './retailer.service';
       { name: User.name, schema: UserSchema },
       { name: Qrcode.name, schema: QrcodeSchema },
     ]),
+    NotifationModule,
   ],
   controllers: [RetailerController],
   providers: [RetailerService],

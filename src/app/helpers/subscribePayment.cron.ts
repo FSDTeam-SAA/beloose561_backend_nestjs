@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import cron from 'node-cron';
+import { NotifationService } from 'src/app/module/notifation/notifation.service';
 import {
   Retailer,
   RetailerDocument,
@@ -22,6 +23,7 @@ export class SubscribePaymentCronService implements OnModuleInit {
     private readonly subscribeModel: Model<SubscribeDocument>,
     @InjectModel(Retailer.name)
     private readonly retailerModel: Model<RetailerDocument>,
+    private readonly notifationService: NotifationService,
   ) {}
 
   onModuleInit() {
@@ -50,6 +52,15 @@ export class SubscribePaymentCronService implements OnModuleInit {
       await this.retailerModel.updateOne(
         { userId: user._id },
         { subscriptionPlan: 'none', subscriptionStatus: 'inactive' },
+      );
+
+      await this.notifationService.notifyRetailer(
+        user._id,
+        'subscription_expired',
+        'Subscription Expired',
+        'Your subscription has expired. Renew to keep your store active.',
+        undefined,
+        'subscriptionExpiryNotifications',
       );
     }
 
