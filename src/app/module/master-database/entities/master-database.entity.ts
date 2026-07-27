@@ -11,6 +11,12 @@ export class MasterDatabase {
   @Prop({ required: true })
   brand!: string;
 
+  @Prop({
+    enum: ['Something Familiar', 'Try Something New'],
+    default: 'Something Familiar',
+  })
+  discoveryType!: string;
+
   @Prop({ enum: ['mild', 'medium', 'full', 'medium-full'] })
   strength!: string;
 
@@ -32,8 +38,8 @@ export class MasterDatabase {
   @Prop({ type: [String], default: [] })
   pairingSuggestions!: string[];
 
-  @Prop({ default: 0, min: 0 })
-  quantity!: number;
+  // @Prop({ default: 0, min: 0 })
+  // quantity!: number;
 
   @Prop({ required: true, min: 0 })
   price!: number;

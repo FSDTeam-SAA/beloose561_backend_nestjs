@@ -25,6 +25,7 @@ export class CreateMasterDatabaseDto extends OmitType(CreateInventoryDto, [
   'masterCigarId',
   'humidorId',
   'shelfName',
+  'quantity',
 ] as const) {
   @ApiProperty({ example: 'Padron 1964 Natural Toro' })
   @IsString()
@@ -35,6 +36,21 @@ export class CreateMasterDatabaseDto extends OmitType(CreateInventoryDto, [
   @IsString()
   @IsNotEmpty()
   brand!: string;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  quantity?: number;
+
+  @ApiPropertyOptional({
+    enum: ['Something Familiar', 'Try Something New'],
+    default: 'Something Familiar',
+  })
+  @IsOptional()
+  @IsEnum(['Something Familiar', 'Try Something New'])
+  discoveryType?: string;
 
   @ApiPropertyOptional({ example: 'Best Connecticut we carry' })
   @IsOptional()
