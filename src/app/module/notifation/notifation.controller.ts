@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -105,5 +106,15 @@ export class NotifationController {
   async markAsRead(@Param('id') id: string) {
     const result = await this.notifationService.markAsRead(id);
     return { message: 'Notification marked as read', data: result };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete Notification' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin', 'retailer'))
+  @HttpCode(HttpStatus.OK)
+  async deleteNotification(@Param('id') id: string) {
+    const result = await this.notifationService.deleteNotification(id);
+    return { message: 'Notification deleted successfully', data: result };
   }
 }
