@@ -240,12 +240,12 @@ export class InventoryService {
       .find(whereConditions)
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limit);
+      .limit(limit).populate('userId').populate('retailerId').populate('humidorId').populate('masterCigarId');
     const total =
       await this.inventoryRepository.countDocuments(whereConditions);
     return {
       meta: {
-        page,
+        page, 
         limit,
         total,
       },
@@ -323,7 +323,7 @@ export class InventoryService {
   }
 
   async getInventoryById(id: string) {
-    const inventory = await this.inventoryRepository.findById(id);
+    const inventory = await this.inventoryRepository.findById(id).populate('userId').populate('retailerId').populate('humidorId').populate('masterCigarId');
     if (!inventory) throw new HttpException('Inventory not found', 404);
     return inventory;
   }

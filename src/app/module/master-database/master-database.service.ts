@@ -60,7 +60,7 @@ export class MasterDatabaseService {
       .find(whereConditions)
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limit);
+      .limit(limit).populate('submittedByRetailer');
 
     const total =
       await this.masterBatabaseModel.countDocuments(whereConditions);
