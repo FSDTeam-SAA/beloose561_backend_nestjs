@@ -16,6 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiQuery,
@@ -39,20 +40,42 @@ export class MasterDatabaseController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.CREATED)
   async createMasterDatabase(
     @Body() createMasterDatabaseDto: CreateMasterDatabaseDto,
-    @UploadedFile() file?: Express.Multer.File,
   ) {
     const result = await this.masterDatabaseService.createMasterDatabase(
       createMasterDatabaseDto,
-      file,
     );
 
     return {
       message: 'Master database created successfully',
       data: result,
+    };
+  }
+
+  // controller
+  @Post('/bulk-upload')
+  @ApiOperation({ summary: 'Bulk upload master database' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @UseInterceptors(FileInterceptor('file', fileUpload.uploadConfig))
+  @HttpCode(HttpStatus.CREATED)
+  async bulkUploadMasterDatabase(@UploadedFile() file: Express.Multer.File) {
+    const data =
+      await this.masterDatabaseService.uploadBulkMasterDatabase(file);
+    return {
+      message: 'Master database bulk uploaded successfully',
+      data,
     };
   }
 
@@ -62,12 +85,10 @@ export class MasterDatabaseController {
   @ApiQuery({ name: 'status', type: 'string', required: false })
   @ApiQuery({ name: 'name', type: 'string', required: false })
   @ApiQuery({ name: 'brand', type: 'string', required: false })
-  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
-  @ApiQuery({ name: 'strength', type: 'string', required: false })
-  @ApiQuery({ name: 'size', type: 'string', required: false })
-  @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
   @ApiQuery({ name: 'description', type: 'string', required: false })
-  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
+  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
+  @ApiQuery({ name: 'country', type: 'string', required: false })
+  @ApiQuery({ name: 'price', type: 'number', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
   @ApiQuery({ name: 'sortBy', type: 'string', required: false })
@@ -78,12 +99,10 @@ export class MasterDatabaseController {
       'searchTerm',
       'name',
       'brand',
-      'wrapper',
-      'strength',
-      'size',
-      'smokingTime',
       'description',
-      'pairingSuggestions',
+      'manufacturer',
+      'country',
+      'price',
       'status',
     ]);
     const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
@@ -119,12 +138,10 @@ export class MasterDatabaseController {
   async updateMasterDatabase(
     @Param('id') id: string,
     @Body() updateMasterDatabaseDto: UpdateMasterDatabaseDto,
-    @UploadedFile() file?: Express.Multer.File,
   ) {
     const result = await this.masterDatabaseService.updateMasterDatabaseById(
       id,
       updateMasterDatabaseDto,
-      file,
     );
     return {
       message: 'Master database updated successfully',

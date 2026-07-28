@@ -1,157 +1,61 @@
-import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
-import { CreateInventoryDto } from '../../inventory/dto/create-inventory.dto';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-export enum MasterDatabaseStatus {
-  ACTIVE = 'active',
-  UNDER_REVIEW = 'under_review',
-  OUT_OF_STOCK = 'out_of_stock',
-  INACTIVE = 'inactive',
-}
-
-export class CreateMasterDatabaseDto extends OmitType(CreateInventoryDto, [
-  'masterCigarId',
-  'humidorId',
-  'shelfName',
-  'quantity',
-] as const) {
-  @ApiProperty({ example: 'Padron 1964 Natural Toro' })
+export class CreateMasterDatabaseDto {
+  @ApiProperty({
+    example: 'Padron 1964 Anniversary Exclusivo',
+    description: 'Master cigar name / product name',
+  })
   @IsString()
-  @IsNotEmpty()
   name!: string;
 
-  @ApiProperty({ example: 'Padron' })
+  @ApiProperty({
+    example: 'Padron',
+    description: 'Cigar brand name',
+  })
   @IsString()
-  @IsNotEmpty()
   brand!: string;
 
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  quantity?: number;
-
   @ApiPropertyOptional({
-    enum: ['Something Familiar', 'Try Something New'],
-    default: 'Something Familiar',
+    example: 'Rich cocoa, espresso, cedar and pepper notes.',
+    description: 'Product description or tasting profile',
   })
   @IsOptional()
-  @IsEnum(['Something Familiar', 'Try Something New'])
-  discoveryType?: string;
+  @IsString()
+  description?: string;
 
-  @ApiPropertyOptional({ example: 'Best Connecticut we carry' })
+  @ApiPropertyOptional({
+    example: 'Padron Cigars',
+    description: 'Manufacturer name',
+  })
   @IsOptional()
   @IsString()
-  staffPickNote?: string;
+  manufacturer?: string;
 
-  @ApiPropertyOptional({ example: 'Mike' })
+  @ApiPropertyOptional({
+    example: 'Nicaragua',
+    description: 'Country of origin',
+  })
   @IsOptional()
   @IsString()
-  staffPickBy?: string;
+  country?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    example: 18,
+    description:
+      'Reference price only. Prefer MSRP / Suggested Retail Price instead of store selling price.',
+  })
   @IsOptional()
-  @IsDateString()
-  staffPickAddedAt?: string;
-
-  @ApiPropertyOptional({ example: 'Just arrived' })
-  @IsOptional()
-  @IsString()
-  newArrivalNote?: string;
-
-  @ApiPropertyOptional({ default: 30 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  autoRemoveDays?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  newArrivalExpiresAt?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  featuredDate?: string;
-
-  @ApiPropertyOptional({ example: 20 })
-  @IsOptional()
-  @Type(() => Number)
   @IsNumber()
   @Min(0)
-  featuredPrice?: number;
+  price?: number;
 
-  @ApiPropertyOptional({ enum: MasterDatabaseStatus })
+  @ApiPropertyOptional({
+    enum: ['active', 'under_review', 'out_of_stock', 'inactive'],
+    example: 'active',
+    description: 'Master database record status',
+  })
   @IsOptional()
-  @IsEnum(MasterDatabaseStatus)
-  status?: MasterDatabaseStatus;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  totalSearches?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  totalViews?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  totalSold?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  lastSoldDate?: string;
-
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'boolean' ? value : value === 'true',
-  )
-  @IsBoolean()
-  isOnDiscount?: boolean;
-
-  @ApiPropertyOptional({ example: 10 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  discountPercentage?: number;
-
-  @ApiPropertyOptional({ example: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  discountPrice?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  discountedAt?: string;
+  @IsEnum(['active', 'under_review', 'out_of_stock', 'inactive'])
+  status?: string;
 }

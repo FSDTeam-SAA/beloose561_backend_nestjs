@@ -1,21 +1,3 @@
-# syntax=docker/dockerfile:1
-
-# ============================================================
-# Production Dockerfile for NestJS
-# ============================================================
-# Ei file ta multi-stage build use kore:
-# 1. deps: sob npm package install kore
-# 2. builder: TypeScript build kore dist folder banay
-# 3. production-deps: only production dependencies rakhe
-# 4. production: final lightweight image run kore
-#
-# Local build:
-# docker build -t nestjs-boilerplate-mongodb:local .
-#
-# Run:
-# docker run --env-file .env -p 5000:5000 nestjs-boilerplate-mongodb:local
-# ============================================================
-
 FROM node:20-alpine AS base
 
 # App container-er working directory

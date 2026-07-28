@@ -74,6 +74,12 @@ export class Inventory {
   @Prop({ required: true, min: 0 })
   quantity!: number;
 
+  @Prop()
+  manufacturer!: string;
+
+  @Prop()
+  country!: string;
+
   @Prop({ required: true, min: 0 })
   price!: number;
 
