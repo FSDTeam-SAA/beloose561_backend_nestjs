@@ -136,11 +136,11 @@ export class InventoryService {
     const masterCigar = createInventoryDto.masterCigarId
       ? await this.masterDatabaseModel.findOne({
           _id: createInventoryDto.masterCigarId,
-          status: 'approved',
+          status: { $in: ['active', 'approved'] },
         })
       : null;
     if (createInventoryDto.masterCigarId && !masterCigar)
-      throw new HttpException('Approved master cigar not found', 404);
+      throw new HttpException('Active master cigar not found', 404);
 
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
@@ -152,7 +152,11 @@ export class InventoryService {
           masterCigarId: masterCigar._id,
           name: masterCigar.name,
           brand: masterCigar.brand,
-          description: masterCigar.description,
+          description:
+            masterCigar.description ?? createInventoryDto.description,
+          manufacturer:
+            masterCigar.manufacturer ?? createInventoryDto.manufacturer,
+          country: masterCigar.country ?? createInventoryDto.country,
         }
       : {};
 
