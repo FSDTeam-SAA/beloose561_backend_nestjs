@@ -5,12 +5,17 @@ import buildWhereConditions from '../../helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
 import {
+  Inventory,
+  InventoryDocument,
+} from '../inventory/entities/inventory.entity';
+import {
   Retailer,
   RetailerDocument,
 } from '../retailer/entities/retailer.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
+import { UpdateShelfGridDto } from './dto/update-shelf-grid.dto';
 import { Humidor, HumidorDocument } from './entities/humidor.entity';
 
 @Injectable()
@@ -20,6 +25,8 @@ export class HumidorService {
     private readonly humidorModel: Model<HumidorDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Retailer.name) private retailerModel: Model<RetailerDocument>,
+    @InjectModel(Inventory.name)
+    private readonly inventoryModel: Model<InventoryDocument>,
   ) {}
 
   async createHumidor(userId: string, createHumidorDto: CreateHumidorDto) {
@@ -112,6 +119,45 @@ export class HumidorService {
       { new: true },
     );
     if (!result) throw new HttpException('Humidor not found', 404);
+    return result;
+  }
+
+  async updateShelfGrid(
+    id: string,
+    shelfId: string,
+    userId: string,
+    grid: UpdateShelfGridDto,
+  ) {
+    const humidor = await this.humidorModel.findOne({ _id: id, userId });
+    const shelf = humidor?.shelfes.find((item) => String(item._id) === shelfId);
+    if (!humidor || !shelf) {
+      throw new HttpException('Humidor or shelf not found', 404);
+    }
+    const outsideGrid = await this.inventoryModel.exists({
+      humidorId: humidor._id,
+      shelfName: shelf.name,
+      $or: [
+        { shelfRow: { $gt: grid.rows } },
+        { shelfColumn: { $gt: grid.columns } },
+      ],
+    });
+    if (outsideGrid) {
+      throw new HttpException(
+        'Move inventory items inside the new grid before reducing its size',
+        409,
+      );
+    }
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId, 'shelfes._id': shelfId },
+      {
+        $set: {
+          'shelfes.$.rows': grid.rows,
+          'shelfes.$.columns': grid.columns,
+        },
+      },
+      { new: true },
+    );
+    if (!result) throw new HttpException('Humidor or shelf not found', 404);
     return result;
   }
 

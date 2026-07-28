@@ -22,6 +22,7 @@ import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
+import { UpdateShelfGridDto } from './dto/update-shelf-grid.dto';
 import { HumidorService } from './humidor.service';
 
 @ApiTags('humidor')
@@ -93,6 +94,26 @@ export class HumidorController {
   ) {
     const result = await this.humidorService.addShelf(id, req.user!.id, shelf);
     return { message: 'Shelf added successfully', data: result };
+  }
+
+  @Put(':id/shelf/:shelfId/grid')
+  @ApiOperation({ summary: 'Update a shelf row and column capacity' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async updateShelfGrid(
+    @Param('id') id: string,
+    @Param('shelfId') shelfId: string,
+    @Req() req: Request,
+    @Body() grid: UpdateShelfGridDto,
+  ) {
+    const result = await this.humidorService.updateShelfGrid(
+      id,
+      shelfId,
+      req.user!.id,
+      grid,
+    );
+    return { message: 'Shelf grid updated successfully', data: result };
   }
 
   @Get(':id')

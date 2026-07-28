@@ -17,6 +17,12 @@ class Shelf {
   @Prop()
   description!: string;
 
+  @Prop({ required: true, min: 1 })
+  rows!: number;
+
+  @Prop({ required: true, min: 1 })
+  columns!: number;
+
   @Prop({ default: 0 })
   cigarCount!: number;
 }
@@ -54,6 +60,8 @@ export class Humidor {
       _id: { type: mongoose.Schema.Types.ObjectId },
       name: String,
       description: String,
+      rows: { type: Number, required: true, min: 1 },
+      columns: { type: Number, required: true, min: 1 },
       cigarCount: { type: Number, default: 0 },
     },
   ])
