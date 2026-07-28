@@ -484,6 +484,8 @@ export class InventoryService {
       const masterEntry = await this.masterDatabaseModel.create({
         name: inventory.name,
         brand: inventory.brand,
+        manufacturer: inventory.manufacturer,
+        country: inventory.country,
         description: inventory.description,
         price: inventory.price,
         status: 'active',
