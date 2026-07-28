@@ -55,6 +55,51 @@ export class InventoryService {
     private readonly notifationService: NotifationService,
   ) {}
 
+  private validateShelfPosition(
+    shelf: { rows?: number; columns?: number },
+    row: number,
+    column: number,
+  ) {
+    if (!shelf.rows || !shelf.columns) {
+      throw new HttpException(
+        'Configure rows and columns for the selected shelf first',
+        400,
+      );
+    }
+    if (row > shelf.rows || column > shelf.columns) {
+      throw new HttpException(
+        `Position must be within the shelf grid (${shelf.rows} rows × ${shelf.columns} columns)`,
+        400,
+      );
+    }
+  }
+
+  private async ensureShelfCellAvailable(
+    retailerId: mongoose.Types.ObjectId,
+    humidorId: mongoose.Types.ObjectId,
+    shelfName: string,
+    shelfRow: number,
+    shelfColumn: number,
+    excludeInventoryId?: string,
+  ) {
+    const occupied = await this.inventoryRepository.exists({
+      retailerId,
+      humidorId,
+      shelfName,
+      shelfRow,
+      shelfColumn,
+      ...(excludeInventoryId
+        ? { _id: { $ne: new mongoose.Types.ObjectId(excludeInventoryId) } }
+        : {}),
+    });
+    if (occupied) {
+      throw new HttpException(
+        `Row ${shelfRow}, column ${shelfColumn} is already occupied`,
+        409,
+      );
+    }
+  }
+
   async createInventory(
     userId: string,
     createInventoryDto: CreateInventoryDto,
@@ -70,12 +115,23 @@ export class InventoryService {
       retailerId: retailer._id,
     });
     if (!humidor) throw new HttpException('Humidor not found', 404);
-    if (
-      !humidor.shelfes.some(
-        (shelf) => shelf.name === createInventoryDto.shelfName,
-      )
-    )
+    const shelf = humidor.shelfes.find(
+      (item) => item.name === createInventoryDto.shelfName,
+    );
+    if (!shelf)
       throw new HttpException('Shelf not found in selected humidor', 404);
+    this.validateShelfPosition(
+      shelf,
+      createInventoryDto.shelfRow,
+      createInventoryDto.shelfColumn,
+    );
+    await this.ensureShelfCellAvailable(
+      retailer._id,
+      humidor._id,
+      shelf.name,
+      createInventoryDto.shelfRow,
+      createInventoryDto.shelfColumn,
+    );
 
     const masterCigar = createInventoryDto.masterCigarId
       ? await this.masterDatabaseModel.findOne({
@@ -240,12 +296,16 @@ export class InventoryService {
       .find(whereConditions)
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limit).populate('userId').populate('retailerId').populate('humidorId').populate('masterCigarId');
+      .limit(limit)
+      .populate('userId')
+      .populate('retailerId')
+      .populate('humidorId')
+      .populate('masterCigarId');
     const total =
       await this.inventoryRepository.countDocuments(whereConditions);
     return {
       meta: {
-        page, 
+        page,
         limit,
         total,
       },
@@ -323,9 +383,20 @@ export class InventoryService {
   }
 
   async getInventoryById(id: string) {
-    const inventory = await this.inventoryRepository.findById(id).populate('userId').populate('retailerId').populate('humidorId').populate('masterCigarId');
+    const inventory = await this.inventoryRepository
+      .findById(id)
+      .populate('userId')
+      .populate('retailerId')
+      .populate('humidorId')
+      .populate('masterCigarId');
     if (!inventory) throw new HttpException('Inventory not found', 404);
-    return inventory;
+    const result = inventory.toObject() as Record<string, any>;
+    const humidor = result.humidorId;
+    return {
+      ...result,
+      humidorName:
+        humidor && typeof humidor === 'object' ? humidor.name : undefined,
+    };
   }
 
   async updateInventory(
@@ -335,7 +406,12 @@ export class InventoryService {
     file?: Express.Multer.File,
   ) {
     const inventory = await this.getOwnedInventory(userId, id);
-    if (updateInventoryDto.humidorId || updateInventoryDto.shelfName) {
+    if (
+      updateInventoryDto.humidorId ||
+      updateInventoryDto.shelfName ||
+      updateInventoryDto.shelfRow ||
+      updateInventoryDto.shelfColumn
+    ) {
       const humidor = await this.humidorModel.findOne({
         _id: updateInventoryDto.humidorId ?? inventory.humidorId,
         userId: inventory.userId,
@@ -343,8 +419,24 @@ export class InventoryService {
       });
       if (!humidor) throw new HttpException('Humidor not found', 404);
       const shelfName = updateInventoryDto.shelfName ?? inventory.shelfName;
-      if (!humidor.shelfes.some((shelf) => shelf.name === shelfName))
+      const shelf = humidor.shelfes.find((item) => item.name === shelfName);
+      if (!shelf)
         throw new HttpException('Shelf not found in selected humidor', 404);
+      const shelfRow = updateInventoryDto.shelfRow ?? inventory.shelfRow;
+      const shelfColumn =
+        updateInventoryDto.shelfColumn ?? inventory.shelfColumn;
+      if (!shelfRow || !shelfColumn) {
+        throw new HttpException('Shelf row and column are required', 400);
+      }
+      this.validateShelfPosition(shelf, shelfRow, shelfColumn);
+      await this.ensureShelfCellAvailable(
+        inventory.retailerId,
+        humidor._id,
+        shelfName,
+        shelfRow,
+        shelfColumn,
+        id,
+      );
     }
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
@@ -664,6 +756,8 @@ export class InventoryService {
       staffPickBy: item.staffPickBy,
       staffPickAddedAt: item.staffPickAddedAt,
       shelfName: item.shelfName,
+      shelfRow: item.shelfRow,
+      shelfColumn: item.shelfColumn,
       humidorName:
         humidor && typeof humidor === 'object' ? humidor.name : undefined,
     };
@@ -810,6 +904,8 @@ export class InventoryService {
       autoRemoveDays: item.autoRemoveDays,
       newArrivalExpiresAt: item.newArrivalExpiresAt,
       shelfName: item.shelfName,
+      shelfRow: item.shelfRow,
+      shelfColumn: item.shelfColumn,
       humidorName:
         humidor && typeof humidor === 'object' ? humidor.name : undefined,
     };
@@ -980,6 +1076,8 @@ export class InventoryService {
           ? Number((item.price - featuredPrice).toFixed(2))
           : undefined,
       shelfName: item.shelfName,
+      shelfRow: item.shelfRow,
+      shelfColumn: item.shelfColumn,
       humidorName:
         humidor && typeof humidor === 'object' ? humidor.name : undefined,
     };
@@ -1235,6 +1333,8 @@ export class InventoryService {
       pairingSuggestions: item.pairingSuggestions,
       inStock: item.quantity > 0,
       shelfName: item.shelfName,
+      shelfRow: item.shelfRow,
+      shelfColumn: item.shelfColumn,
       humidorName:
         humidor && typeof humidor === 'object' ? humidor.name : undefined,
     };
@@ -1519,6 +1619,8 @@ export class InventoryService {
             ? anyItem.humidorId.name
             : undefined,
         shelfName: anyItem.shelfName,
+        shelfRow: anyItem.shelfRow,
+        shelfColumn: anyItem.shelfColumn,
       },
       quantity: anyItem.quantity,
       inStock: anyItem.quantity > 0,
@@ -1657,6 +1759,8 @@ export class InventoryService {
               ? item.humidorId.name
               : undefined,
           shelfName: item.shelfName,
+          shelfRow: item.shelfRow,
+          shelfColumn: item.shelfColumn,
         },
         whyThisCigar,
       },

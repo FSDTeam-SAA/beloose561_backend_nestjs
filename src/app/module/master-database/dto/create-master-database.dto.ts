@@ -25,6 +25,8 @@ export class CreateMasterDatabaseDto extends OmitType(CreateInventoryDto, [
   'masterCigarId',
   'humidorId',
   'shelfName',
+  'shelfRow',
+  'shelfColumn',
   'quantity',
 ] as const) {
   @ApiProperty({ example: 'Padron 1964 Natural Toro' })

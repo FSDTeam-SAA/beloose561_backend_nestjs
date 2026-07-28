@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsEnum,
   IsIn,
+  IsInt,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -142,6 +143,24 @@ export class CreateInventoryDto {
   @IsString()
   @IsNotEmpty()
   shelfName!: string;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'Row position inside the selected shelf',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  shelfRow!: number;
+
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'Column position inside the selected shelf',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  shelfColumn!: number;
 
   @ApiPropertyOptional({ example: 10 })
   @Type(() => Number)

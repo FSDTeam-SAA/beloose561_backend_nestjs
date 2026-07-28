@@ -4,9 +4,12 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -27,6 +30,28 @@ export class HumidorShelfDto {
   @IsString()
   @IsNotEmpty()
   description?: string;
+
+  @ApiProperty({
+    example: 1,
+    minimum: 1,
+    description: 'Number of rows available inside the shelf',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  rows!: number;
+
+  @ApiProperty({
+    example: 1,
+    minimum: 1,
+    description: 'Number of columns available inside the shelf',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  columns!: number;
 }
 
 export class CreateHumidorDto {
@@ -64,10 +89,14 @@ export class CreateHumidorDto {
       {
         name: 'Top Shelf',
         description: 'Premium Cigars',
+        rows: 5,
+        columns: 4,
       },
       {
         name: 'Middle Shelf',
         description: 'Medium Range Cigars',
+        rows: 3,
+        columns: 6,
       },
     ],
   })
