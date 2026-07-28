@@ -152,13 +152,6 @@ export class InventoryService {
           masterCigarId: masterCigar._id,
           name: masterCigar.name,
           brand: masterCigar.brand,
-          strength: masterCigar.strength,
-          wrapper: masterCigar.wrapper,
-          size: masterCigar.size,
-          smokingTime:
-            this.normalizeSmokingTime(masterCigar.smokingTime) ??
-            createInventoryDto.smokingTime,
-          image: masterCigar.image,
           description: masterCigar.description,
         }
       : {};
@@ -583,10 +576,8 @@ export class InventoryService {
       const masterEntry = await this.masterDatabaseModel.create({
         name: inventory.name,
         brand: inventory.brand,
-        strength: inventory.strength,
-        wrapper: inventory.wrapper,
-        size: inventory.size,
-        image: inventory.image,
+        manufacturer: inventory.manufacturer,
+        country: inventory.country,
         description: inventory.description,
         price: inventory.price,
         status: 'active',
