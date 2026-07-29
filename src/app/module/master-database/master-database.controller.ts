@@ -97,13 +97,15 @@ export class MasterDatabaseController {
   async getAllMasterDatabase(@Req() req: Request) {
     const filters = pick(req.query, [
       'searchTerm',
-      'name',
+      'productLine',
       'brand',
-      'description',
-      'manufacturer',
-      'country',
-      'price',
+      'strength',
+      'wrapper',
+      'estimatedSmokingTime',
+      'pairingSuggestions',
       'status',
+      'suggestedRetailPriceEach',
+      'estimatedSmokingBox',
     ]);
     const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.masterDatabaseService.getAllMasterDatabase(

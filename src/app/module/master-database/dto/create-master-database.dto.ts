@@ -1,61 +1,70 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+
+export enum MasterDatabaseStatus {
+  ACTIVE = 'active',
+  UNDER_REVIEW = 'under_review',
+  OUT_OF_STOCK = 'out_of_stock',
+  INACTIVE = 'inactive',
+}
 
 export class CreateMasterDatabaseDto {
-  @ApiProperty({
-    example: 'Padron 1964 Anniversary Exclusivo',
-    description: 'Master cigar name / product name',
-  })
+  @ApiPropertyOptional({ example: 'Gran Reserva — Robusto' })
   @IsString()
-  name!: string;
+  @IsNotEmpty()
+  productLine!: string;
 
-  @ApiProperty({
-    example: 'Padron',
-    description: 'Cigar brand name',
-  })
+  @ApiPropertyOptional({ example: 'Arturo Fuente' })
   @IsString()
+  @IsNotEmpty()
   brand!: string;
 
-  @ApiPropertyOptional({
-    example: 'Rich cocoa, espresso, cedar and pepper notes.',
-    description: 'Product description or tasting profile',
-  })
+  @ApiPropertyOptional({ example: 'Medium' })
   @IsOptional()
   @IsString()
-  description?: string;
+  strength?: string;
 
-  @ApiPropertyOptional({
-    example: 'Padron Cigars',
-    description: 'Manufacturer name',
-  })
+  @ApiPropertyOptional({ example: 'Natural' })
   @IsOptional()
   @IsString()
-  manufacturer?: string;
+  wrapper?: string;
 
-  @ApiPropertyOptional({
-    example: 'Nicaragua',
-    description: 'Country of origin',
-  })
+  @ApiPropertyOptional({ example: '1 Hour' })
   @IsOptional()
   @IsString()
-  country?: string;
+  estimatedSmokingTime?: string;
 
-  @ApiPropertyOptional({
-    example: 18,
-    description:
-      'Reference price only. Prefer MSRP / Suggested Retail Price instead of store selling price.',
-  })
+  @ApiPropertyOptional({ example: ['Cigar + Aged Rum'], type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  pairingSuggestions?: string[];
+
+  @ApiPropertyOptional({ example: 13.0 })
   @IsOptional()
   @IsNumber()
   @Min(0)
-  price?: number;
+  suggestedRetailPriceEach?: number;
+
+  @ApiPropertyOptional({ example: 260.0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  suggestedRetailPricePerBox?: number;
 
   @ApiPropertyOptional({
-    enum: ['active', 'under_review', 'out_of_stock', 'inactive'],
-    example: 'active',
-    description: 'Master database record status',
+    enum: MasterDatabaseStatus,
+    default: MasterDatabaseStatus.ACTIVE,
   })
   @IsOptional()
-  @IsEnum(['active', 'under_review', 'out_of_stock', 'inactive'])
-  status?: string;
+  @IsEnum(MasterDatabaseStatus)
+  status?: MasterDatabaseStatus;
 }
