@@ -5,6 +5,10 @@ import * as XLSX from 'xlsx';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
+import {
+  Inventory,
+  InventoryDocument,
+} from '../inventory/entities/inventory.entity';
 import { CreateMasterDatabaseDto } from './dto/create-master-database.dto';
 import { UpdateMasterDatabaseDto } from './dto/update-master-database.dto';
 import {
@@ -17,12 +21,27 @@ export class MasterDatabaseService {
   constructor(
     @InjectModel(MasterDatabase.name)
     private readonly masterBatabaseModel: Model<MasterDatabaseDocument>,
+    @InjectModel(Inventory.name)
+    private readonly inventoryModel: Model<InventoryDocument>,
   ) {}
 
   async createMasterDatabase(createMasterDatabaseDto: CreateMasterDatabaseDto) {
-    const masterDatabase = await this.masterBatabaseModel.create(
-      createMasterDatabaseDto,
-    );
+    const strength = createMasterDatabaseDto.strength ?? '';
+    const wrapper = createMasterDatabaseDto.wrapper ?? '';
+    const existing = await this.masterBatabaseModel.exists({
+      brand: createMasterDatabaseDto.brand,
+      productLine: createMasterDatabaseDto.productLine,
+      strength,
+      wrapper,
+    });
+    if (existing) {
+      throw new HttpException('Master item already exists', 409);
+    }
+    const masterDatabase = await this.masterBatabaseModel.create({
+      ...createMasterDatabaseDto,
+      strength,
+      wrapper,
+    });
 
     if (!masterDatabase) throw new HttpException('not found', 404);
     return masterDatabase;
@@ -56,14 +75,35 @@ export class MasterDatabaseService {
       );
     }
 
-    const inserted = await this.masterBatabaseModel.insertMany(mappedRows, {
+    const ops = mappedRows.map((entry) => ({
+      updateOne: {
+        filter: {
+          brand: entry.brand,
+          productLine: entry.productLine,
+          strength: entry.strength ?? '',
+          wrapper: entry.wrapper ?? '',
+        },
+        update: { $setOnInsert: entry },
+        upsert: true,
+      },
+    }));
+
+    const result = await this.masterBatabaseModel.bulkWrite(ops, {
       ordered: false,
     });
+    const bulkResult = result as unknown as {
+      upsertedCount?: number;
+      nUpserted?: number;
+    };
+    const insertedCount = bulkResult.upsertedCount ?? bulkResult.nUpserted ?? 0;
+    const invalidCount = rows.length - mappedRows.length;
+    const duplicateSkippedCount = mappedRows.length - insertedCount;
 
     return {
       totalRows: rows.length,
-      insertedCount: inserted.length,
-      skippedCount: rows.length - mappedRows.length,
+      insertedCount,
+      duplicateSkippedCount,
+      invalidCount,
     };
   }
 
@@ -192,6 +232,13 @@ export class MasterDatabaseService {
   }
 
   async deleteMasterDatabaseById(id: string) {
+    const inUse = await this.inventoryModel.exists({ masterCigarId: id });
+    if (inUse) {
+      throw new HttpException(
+        'Cannot delete: this master item is used in inventory',
+        409,
+      );
+    }
     const masterDatabase = await this.masterBatabaseModel.findByIdAndDelete(id);
     if (!masterDatabase) throw new HttpException('not found', 404);
     return masterDatabase;

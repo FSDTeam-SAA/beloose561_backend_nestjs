@@ -178,6 +178,17 @@ export class HumidorService {
   }
 
   async deleteHumidor(id: string, userId: string) {
+    const humidor = await this.humidorModel.findOne({ _id: id, userId });
+    if (!humidor) {
+      throw new HttpException('Humidor not found', 404);
+    }
+    const inUse = await this.inventoryModel.exists({ humidorId: humidor._id });
+    if (inUse) {
+      throw new HttpException(
+        'Cannot delete: this humidor has inventory items',
+        409,
+      );
+    }
     const result = await this.humidorModel.findOneAndDelete({
       _id: id,
       userId,
