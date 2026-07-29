@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsArray, IsOptional, IsString } from 'class-validator';
 
 export class CreateRetailerAboutDto {
@@ -21,6 +22,22 @@ export class CreateRetailerAboutDto {
     example: ['Fast delivery', 'Best price'],
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // not JSON, fall through to comma split
+      }
+      return value
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   features?: string[];
