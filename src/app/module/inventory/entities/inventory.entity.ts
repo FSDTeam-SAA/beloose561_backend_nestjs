@@ -34,6 +34,9 @@ export class Inventory {
   @Prop()
   brand!: string;
 
+  @Prop()
+  productLine!: string;
+
   @Prop({
     enum: ['mild', 'medium', 'full', 'medium-full'],
   })
@@ -80,15 +83,13 @@ export class Inventory {
   @Prop({ required: true, min: 0 })
   quantity!: number;
 
-  @Prop()
-  manufacturer!: string;
-
-  @Prop()
-  country!: string;
-
   @Prop({ required: true, min: 0 })
   price!: number;
 
+  @Prop({ required: true, min: 0 })
+  pricePerBox!: number;
+
+  // Customer Experience
   // Customer Experience
   @Prop({ default: false })
   isStaffPick!: boolean;

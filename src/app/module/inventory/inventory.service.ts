@@ -147,18 +147,20 @@ export class InventoryService {
       createInventoryDto.image = uploadedFile.url;
     }
 
-    const masterFields = masterCigar
+    const masterPrefillFields = masterCigar
       ? {
           masterCigarId: masterCigar._id,
-          name: masterCigar.name,
+          productLine: masterCigar.productLine,
+          name: masterCigar.productLine,
           brand: masterCigar.brand,
-          description:
-            masterCigar.description ?? createInventoryDto.description,
-          manufacturer:
-            masterCigar.manufacturer ?? createInventoryDto.manufacturer,
-          country: masterCigar.country ?? createInventoryDto.country,
+          strength: masterCigar.strength,
+          wrapper: masterCigar.wrapper,
+          smokingTime: masterCigar.estimatedSmokingTime,
+          pairingSuggestions: masterCigar.pairingSuggestions,
         }
-      : {};
+      : {
+          productLine: createInventoryDto.name,
+        };
 
     const staffPickFields = createInventoryDto.isStaffPick
       ? { staffPickAddedAt: new Date() }
@@ -185,7 +187,7 @@ export class InventoryService {
 
     const inventory = await this.inventoryRepository.create({
       ...createInventoryDto,
-      ...masterFields,
+      ...masterPrefillFields,
       ...staffPickFields,
       ...newArrivalFields,
       ...dailyFeaturedFields,
@@ -202,12 +204,12 @@ export class InventoryService {
       );
     }
 
-    if (inventory.status === 'under_review') {
+    if ((inventory as InventoryDocument).status === 'under_review') {
       await this.notifationService.notifyAdmin(
         'new_product_submission',
         'New Product Submission',
-        `${retailer.storeName} submitted "${inventory.name}" for review`,
-        inventory._id,
+        `${retailer.storeName} submitted "${(inventory as any).productLine} ${(inventory as any).wrapper} ${(inventory as any).strength}" for review`,
+        (inventory as InventoryDocument)._id.toString(),
         'newProductSubmissions',
       );
     }
@@ -578,12 +580,14 @@ export class InventoryService {
     // status 'active' e approve hocche ebong ei item MasterDatabase e nai (nijer deya info diye under_review chilo)
     if (status === 'active' && !inventory.masterCigarId) {
       const masterEntry = await this.masterDatabaseModel.create({
-        name: inventory.name,
+        productLine: inventory.name,
         brand: inventory.brand,
-        manufacturer: inventory.manufacturer,
-        country: inventory.country,
-        description: inventory.description,
-        price: inventory.price,
+        strength: inventory.strength,
+        wrapper: inventory.wrapper,
+        estimatedSmokingTime: inventory.smokingTime,
+        pairingSuggestions: inventory.pairingSuggestions,
+        suggestedRetailPriceEach: inventory.price,
+        suggestedRetailPricePerBox: inventory.pricePerBox,
         status: 'active',
         submittedByRetailer: inventory.retailerId,
       });

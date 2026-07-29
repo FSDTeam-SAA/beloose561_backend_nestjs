@@ -28,7 +28,6 @@ export class MasterDatabaseService {
     return masterDatabase;
   }
 
-  // service
   async uploadBulkMasterDatabase(file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File is required');
@@ -53,16 +52,32 @@ export class MasterDatabaseService {
 
     if (!mappedRows.length) {
       throw new BadRequestException(
-        'No valid rows found. Required columns: name, brand',
+        'No valid rows found. Required columns: Brand, Product Line',
       );
     }
 
-    return this.masterBatabaseModel.insertMany(mappedRows);
+    const inserted = await this.masterBatabaseModel.insertMany(mappedRows, {
+      ordered: false,
+    });
+
+    return {
+      totalRows: rows.length,
+      insertedCount: inserted.length,
+      skippedCount: rows.length - mappedRows.length,
+    };
   }
 
-  private getValue(row: Record<string, unknown>, key: string): string {
+  private normalizeKey(key: string): string {
+    return key
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  private getValue(row: Record<string, unknown>, ...aliases: string[]): string {
+    const wanted = aliases.map((a) => this.normalizeKey(a));
     for (const [rowKey, value] of Object.entries(row)) {
-      if (rowKey.trim().toLowerCase().replace(/\s+/g, '') === key) {
+      if (wanted.includes(this.normalizeKey(rowKey))) {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return String(value ?? '').trim();
       }
@@ -70,21 +85,56 @@ export class MasterDatabaseService {
     return '';
   }
 
-  private toMasterDatabaseEntry(row: Record<string, unknown>) {
-    const name = this.getValue(row, 'name');
-    const brand = this.getValue(row, 'brand');
-    if (!name || !brand) return null;
+  private parsePrice(raw: string): number | undefined {
+    if (!raw) return undefined;
+    const cleaned = raw.replace(/[^0-9.-]/g, '');
+    if (!cleaned) return undefined;
+    const value = Number(cleaned);
+    return Number.isFinite(value) ? value : undefined;
+  }
 
-    const priceRaw = this.getValue(row, 'price');
-    const price = priceRaw ? Number(priceRaw) : undefined;
+  private toMasterDatabaseEntry(row: Record<string, unknown>) {
+    const productLine = this.getValue(row, 'productLine', 'product line');
+    const brand = this.getValue(row, 'brand');
+    if (!productLine || !brand) return null;
+
+    const pairingRaw = this.getValue(
+      row,
+      'pairingSuggestions',
+      'pairing suggestions',
+    );
+    const pairingSuggestions = pairingRaw
+      ? pairingRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    const eachRaw = this.getValue(
+      row,
+      'suggestedRetailPriceEach',
+      'suggested retail price (each)',
+      'price',
+    );
+    const boxRaw = this.getValue(
+      row,
+      'suggestedRetailPricePerBox',
+      'suggested retail price (box)',
+    );
 
     return {
-      name,
+      productLine,
       brand,
-      description: this.getValue(row, 'description'),
-      manufacturer: this.getValue(row, 'manufacturer'),
-      country: this.getValue(row, 'country'),
-      price: Number.isFinite(price) ? price : undefined,
+      strength: this.getValue(row, 'strength'),
+      wrapper: this.getValue(row, 'wrapper'),
+      estimatedSmokingTime: this.getValue(
+        row,
+        'estimatedSmokingTime',
+        'estimated smoking time',
+      ),
+      pairingSuggestions,
+      suggestedRetailPriceEach: this.parsePrice(eachRaw),
+      suggestedRetailPricePerBox: this.parsePrice(boxRaw),
       status: 'active',
     };
   }
@@ -93,11 +143,12 @@ export class MasterDatabaseService {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
 
     const whereConditions = buildWhereConditions(params, [
-      'name',
+      'productLine',
       'brand',
-      'description',
-      'manufacturer',
-      'country',
+      'strength',
+      'wrapper',
+      'estimatedSmokingTime',
+      'pairingSuggestions',
       'status',
     ]);
 

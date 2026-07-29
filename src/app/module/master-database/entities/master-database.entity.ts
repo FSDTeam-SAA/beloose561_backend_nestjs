@@ -6,22 +6,28 @@ export type MasterDatabaseDocument = HydratedDocument<MasterDatabase>;
 @Schema({ timestamps: true })
 export class MasterDatabase {
   @Prop({ required: true })
-  name!: string;
+  productLine!: string;
 
   @Prop({ required: true })
   brand!: string;
 
   @Prop()
-  description!: string;
+  strength!: string;
 
   @Prop()
-  manufacturer!: string;
+  wrapper!: string;
 
   @Prop()
-  country!: string;
+  estimatedSmokingTime!: string;
 
   @Prop()
-  price!: number;
+  pairingSuggestions!: string[];
+
+  @Prop()
+  suggestedRetailPriceEach!: number;
+
+  @Prop()
+  suggestedRetailPricePerBox!: number;
 
   @Prop({
     enum: ['active', 'under_review', 'out_of_stock', 'inactive'],

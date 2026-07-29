@@ -83,12 +83,18 @@ export class MasterDatabaseController {
   @ApiOperation({ summary: 'Get all master database' })
   @ApiQuery({ name: 'searchTerm', type: 'string', required: false })
   @ApiQuery({ name: 'status', type: 'string', required: false })
-  @ApiQuery({ name: 'name', type: 'string', required: false })
+  @ApiQuery({ name: 'productLine', type: 'string', required: false })
   @ApiQuery({ name: 'brand', type: 'string', required: false })
-  @ApiQuery({ name: 'description', type: 'string', required: false })
-  @ApiQuery({ name: 'manufacturer', type: 'string', required: false })
-  @ApiQuery({ name: 'country', type: 'string', required: false })
-  @ApiQuery({ name: 'price', type: 'number', required: false })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
+  @ApiQuery({ name: 'estimatedSmokingTime', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
+  @ApiQuery({
+    name: 'suggestedRetailPriceEach',
+    type: 'number',
+    required: false,
+  })
+  @ApiQuery({ name: 'estimatedSmokingBox', type: 'number', required: false })
   @ApiQuery({ name: 'limit', type: 'number', required: false })
   @ApiQuery({ name: 'page', type: 'number', required: false })
   @ApiQuery({ name: 'sortBy', type: 'string', required: false })
@@ -97,13 +103,15 @@ export class MasterDatabaseController {
   async getAllMasterDatabase(@Req() req: Request) {
     const filters = pick(req.query, [
       'searchTerm',
-      'name',
+      'productLine',
       'brand',
-      'description',
-      'manufacturer',
-      'country',
-      'price',
+      'strength',
+      'wrapper',
+      'estimatedSmokingTime',
+      'pairingSuggestions',
       'status',
+      'suggestedRetailPriceEach',
+      'estimatedSmokingBox',
     ]);
     const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.masterDatabaseService.getAllMasterDatabase(

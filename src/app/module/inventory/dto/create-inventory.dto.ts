@@ -85,22 +85,6 @@ export class CreateInventoryDto {
   @IsEnum(CustomCigarStrength)
   strength?: CustomCigarStrength;
 
-  @ApiPropertyOptional({
-    example: 'Padron Cigars',
-    description: 'Manufacturer name',
-  })
-  @IsOptional()
-  @IsString()
-  manufacturer?: string;
-
-  @ApiPropertyOptional({
-    example: 'Nicaragua',
-    description: 'Country of origin',
-  })
-  @IsOptional()
-  @IsString()
-  country?: string;
-
   @ApiPropertyOptional({ example: 'Natural Colorado' })
   @IsOptional()
   @EmptyToUndefined()
@@ -189,6 +173,12 @@ export class CreateInventoryDto {
   @IsNumber()
   @Min(0)
   price!: number;
+
+  @ApiPropertyOptional({ example: 25.99 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  pricePerBox!: number;
 
   @ApiPropertyOptional({ example: false, default: false })
   @IsOptional()
