@@ -17,6 +17,7 @@ import {
 
 export enum CustomCigarStrength {
   MILD = 'mild',
+  MILD_MEDIUM = 'mild-medium',
   MEDIUM = 'medium',
   MEDIUM_FULL = 'medium-full',
   FULL = 'full',

@@ -13,6 +13,7 @@ import {
 
 export enum StrengthPreference {
   MILD = 'mild',
+  MILD_MEDIUM = 'mild-medium',
   MEDIUM = 'medium',
   MEDIUM_FULL = 'medium-full',
   FULL = 'full',

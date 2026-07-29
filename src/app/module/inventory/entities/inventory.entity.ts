@@ -38,7 +38,7 @@ export class Inventory {
   productLine!: string;
 
   @Prop({
-    enum: ['mild', 'medium', 'full', 'medium-full'],
+    enum: ['mild', 'mild-medium', 'medium', 'medium-full', 'full'],
   })
   strength!: string;
 

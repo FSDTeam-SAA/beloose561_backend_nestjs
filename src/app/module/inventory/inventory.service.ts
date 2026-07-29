@@ -153,10 +153,18 @@ export class InventoryService {
           productLine: masterCigar.productLine,
           name: masterCigar.productLine,
           brand: masterCigar.brand,
-          strength: masterCigar.strength,
-          wrapper: masterCigar.wrapper,
-          smokingTime: masterCigar.estimatedSmokingTime,
-          pairingSuggestions: masterCigar.pairingSuggestions,
+          strength:
+            this.normalizeMasterStrength(masterCigar.strength) ??
+            createInventoryDto.strength,
+          wrapper: masterCigar.wrapper || createInventoryDto.wrapper,
+          smokingTime:
+            this.normalizeMasterSmokingTime(
+              masterCigar.estimatedSmokingTime,
+            ) ?? createInventoryDto.smokingTime,
+          pairingSuggestions: masterCigar.pairingSuggestions?.filter(Boolean)
+            .length
+            ? masterCigar.pairingSuggestions.filter(Boolean)
+            : createInventoryDto.pairingSuggestions,
         }
       : {
           productLine: createInventoryDto.name,
@@ -773,6 +781,31 @@ export class InventoryService {
     });
     if (!inventory) throw new HttpException('Inventory not found', 404);
     return inventory;
+  }
+
+  private normalizeMasterStrength(value?: string) {
+    const normalized = value
+      ?.trim()
+      .toLowerCase()
+      .replaceAll('_', '-')
+      .replaceAll(' ', '-');
+    return ['mild', 'mild-medium', 'medium', 'medium-full', 'full'].includes(
+      normalized ?? '',
+    )
+      ? normalized
+      : undefined;
+  }
+
+  private normalizeMasterSmokingTime(value?: string) {
+    if (!value) return undefined;
+    const normalized = value.trim().toLowerCase();
+    const amount = Number(normalized.match(/\d+(?:\.\d+)?/)?.[0]);
+    if (!Number.isFinite(amount)) return undefined;
+    const minutes = normalized.includes('hour') ? amount * 60 : amount;
+    if (normalized.includes('+') || minutes >= 120) return '120+';
+    if (minutes >= 90) return '90';
+    if (minutes >= 60) return '60';
+    return '30';
   }
 
   async addStaffPick(userId: string, id: string, dto: AddStaffPickDto) {
@@ -1449,9 +1482,10 @@ export class InventoryService {
     const reasons: string[] = [];
     const strengthScale: Record<string, number> = {
       mild: 1,
-      medium: 2,
-      'medium-full': 3,
-      full: 4,
+      'mild-medium': 2,
+      medium: 3,
+      'medium-full': 4,
+      full: 5,
     };
 
     if (dto.strength && item.strength) {
