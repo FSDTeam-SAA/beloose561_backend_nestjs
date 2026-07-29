@@ -70,6 +70,12 @@ export class Inventory {
   shelfName!: string;
   // Humidor-এর ভেতরের Shelf name
 
+  @Prop({ required: true, min: 1 })
+  shelfRow!: number;
+
+  @Prop({ required: true, min: 1 })
+  shelfColumn!: number;
+
   // Stock
   @Prop({ required: true, min: 0 })
   quantity!: number;
