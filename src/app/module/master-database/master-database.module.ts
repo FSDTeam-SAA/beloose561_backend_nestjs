@@ -1,5 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import {
+  Inventory,
+  InventorySchema,
+} from '../inventory/entities/inventory.entity';
 import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import {
@@ -13,6 +17,7 @@ import { MasterDatabaseService } from './master-database.service';
   imports: [
     MongooseModule.forFeature([
       { name: MasterDatabase.name, schema: MasterDatabaseSchema },
+      { name: Inventory.name, schema: InventorySchema },
       { name: Retailer.name, schema: RetailerSchema },
       { name: User.name, schema: UserSchema },
     ]),
