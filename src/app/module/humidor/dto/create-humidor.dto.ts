@@ -31,27 +31,57 @@ export class HumidorShelfDto {
   @IsNotEmpty()
   description?: string;
 
-  @ApiProperty({
-    example: 1,
+  @ApiPropertyOptional({
     minimum: 1,
-    description: 'Number of rows available inside the shelf',
+    maximum: 100,
+    description: 'Legacy shelf-grid row count',
   })
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
-  rows!: number;
+  rows?: number;
 
-  @ApiProperty({
-    example: 1,
+  @ApiPropertyOptional({
     minimum: 1,
-    description: 'Number of columns available inside the shelf',
+    maximum: 100,
+    description: 'Legacy shelf-grid column count',
   })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  columns?: number;
+}
+
+export class HumidorWallDto {
+  @ApiProperty({ example: 'Wall 1', description: 'Wall name' })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiPropertyOptional({ example: 'Left wall' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  description?: string;
+
+  @ApiProperty({ example: 4, minimum: 1, maximum: 100 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
   columns!: number;
+
+  @ApiPropertyOptional({ type: () => [HumidorShelfDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => HumidorShelfDto)
+  shelves?: HumidorShelfDto[];
 }
 
 export class CreateHumidorDto {
@@ -81,31 +111,13 @@ export class CreateHumidorDto {
   @IsNotEmpty()
   description?: string;
 
-  @ApiPropertyOptional({
-    type: () => [HumidorShelfDto],
-    description: 'List of shelfes',
-    required: false,
-    example: [
-      {
-        name: 'Top Shelf',
-        description: 'Premium Cigars',
-        rows: 5,
-        columns: 4,
-      },
-      {
-        name: 'Middle Shelf',
-        description: 'Medium Range Cigars',
-        rows: 3,
-        columns: 6,
-      },
-    ],
-  })
+  @ApiPropertyOptional({ type: () => [HumidorWallDto] })
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => HumidorShelfDto)
-  shelfes?: HumidorShelfDto[];
+  @Type(() => HumidorWallDto)
+  walls?: HumidorWallDto[];
 
   @ApiPropertyOptional({
     example: true,

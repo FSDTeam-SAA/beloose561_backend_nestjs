@@ -69,12 +69,22 @@ export class Inventory {
   })
   humidorId!: mongoose.Types.ObjectId;
 
+  @Prop({ type: mongoose.Schema.Types.ObjectId })
+  wallId?: mongoose.Types.ObjectId;
+
+  @Prop()
+  wallName?: string;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId })
+  shelfId?: mongoose.Types.ObjectId;
+
   @Prop({ required: true })
   shelfName!: string;
-  // Humidor-এর ভেতরের Shelf name
+  // Shelf row name within the selected wall
 
-  @Prop({ required: true, min: 1 })
-  shelfRow!: number;
+  @Prop({ min: 1 })
+  shelfRow?: number;
+  // Legacy grid row. New wall-based locations use shelfId instead.
 
   @Prop({ required: true, min: 1 })
   shelfColumn!: number;

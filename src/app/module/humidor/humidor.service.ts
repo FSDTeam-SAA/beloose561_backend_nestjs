@@ -13,9 +13,14 @@ import {
   RetailerDocument,
 } from '../retailer/entities/retailer.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
-import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
+import {
+  CreateHumidorDto,
+  HumidorShelfDto,
+  HumidorWallDto,
+} from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { UpdateShelfGridDto } from './dto/update-shelf-grid.dto';
+import { UpdateWallDto } from './dto/update-wall.dto';
 import { Humidor, HumidorDocument } from './entities/humidor.entity';
 
 @Injectable()
@@ -50,14 +55,6 @@ export class HumidorService {
         { new: true },
       );
     }
-
-    if (!user.isHumidor) {
-      await this.userModel.findByIdAndUpdate(
-        userId,
-        { isHumidor: true },
-        { new: true },
-      );
-    }
     return humidor;
   }
 
@@ -77,7 +74,7 @@ export class HumidorService {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
     const whereConditions = buildWhereConditions(
       params,
-      ['name', 'location', 'description', 'shelfes'],
+      ['name', 'location', 'description', 'walls'],
       { userId: user._id, retailerId: retailer._id },
     );
     const result = await this.humidorModel
@@ -104,7 +101,31 @@ export class HumidorService {
     return result;
   }
 
-  async addShelf(id: string, userId: string, shelf: HumidorShelfDto) {
+  async addWall(id: string, userId: string, wall: HumidorWallDto) {
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId },
+      {
+        $push: {
+          walls: {
+            _id: new Types.ObjectId(),
+            ...wall,
+            shelves: (wall.shelves ?? []).map((shelf) => ({
+              _id: new Types.ObjectId(),
+              ...shelf,
+              cigarCount: 0,
+            })),
+          },
+        },
+      },
+      { new: true },
+    );
+    if (!result) throw new HttpException('Humidor not found', 404);
+    return result;
+  }
+
+  async addLegacyShelf(id: string, userId: string, shelf: HumidorShelfDto) {
+    if (!shelf.rows || !shelf.columns)
+      throw new HttpException('Shelf rows and columns are required', 400);
     const result = await this.humidorModel.findOneAndUpdate(
       { _id: id, userId },
       {
@@ -122,32 +143,33 @@ export class HumidorService {
     return result;
   }
 
-  async updateShelfGrid(
+  async updateLegacyShelfGrid(
     id: string,
     shelfId: string,
     userId: string,
     grid: UpdateShelfGridDto,
   ) {
     const humidor = await this.humidorModel.findOne({ _id: id, userId });
-    const shelf = humidor?.shelfes.find((item) => String(item._id) === shelfId);
-    if (!humidor || !shelf) {
+    const shelf = humidor?.shelfes?.find(
+      (item) => String(item._id) === shelfId,
+    );
+    if (!humidor || !shelf)
       throw new HttpException('Humidor or shelf not found', 404);
-    }
-    const outsideGrid = await this.inventoryModel.exists({
-      humidorId: humidor._id,
-      shelfName: shelf.name,
-      $or: [
-        { shelfRow: { $gt: grid.rows } },
-        { shelfColumn: { $gt: grid.columns } },
-      ],
-    });
-    if (outsideGrid) {
+    if (
+      await this.inventoryModel.exists({
+        humidorId: humidor._id,
+        shelfName: shelf.name,
+        $or: [
+          { shelfRow: { $gt: grid.rows } },
+          { shelfColumn: { $gt: grid.columns } },
+        ],
+      })
+    )
       throw new HttpException(
         'Move inventory items inside the new grid before reducing its size',
         409,
       );
-    }
-    const result = await this.humidorModel.findOneAndUpdate(
+    return this.humidorModel.findOneAndUpdate(
       { _id: id, userId, 'shelfes._id': shelfId },
       {
         $set: {
@@ -157,8 +179,90 @@ export class HumidorService {
       },
       { new: true },
     );
-    if (!result) throw new HttpException('Humidor or shelf not found', 404);
+  }
+
+  async updateWall(
+    id: string,
+    wallId: string,
+    userId: string,
+    update: UpdateWallDto,
+  ) {
+    const humidor = await this.humidorModel.findOne({ _id: id, userId });
+    const wall = humidor?.walls?.find((item) => String(item._id) === wallId);
+    if (!humidor || !wall) {
+      throw new HttpException('Humidor or wall not found', 404);
+    }
+    if (
+      update.columns &&
+      update.columns < wall.columns &&
+      (await this.inventoryModel.exists({
+        humidorId: humidor._id,
+        wallId: wall._id,
+        shelfColumn: { $gt: update.columns },
+      }))
+    ) {
+      throw new HttpException(
+        'Move inventory items inside the new wall columns before reducing its size',
+        409,
+      );
+    }
+    const set = Object.fromEntries(
+      Object.entries(update)
+        .filter(([key, value]) => key !== 'shelves' && value !== undefined)
+        .map(([key, value]) => [`walls.$.${key}`, value]),
+    );
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId, 'walls._id': wallId },
+      { $set: set },
+      { new: true },
+    );
+    if (!result) throw new HttpException('Humidor or wall not found', 404);
     return result;
+  }
+
+  async addShelf(
+    id: string,
+    wallId: string,
+    userId: string,
+    shelf: HumidorShelfDto,
+  ) {
+    const result = await this.humidorModel.findOneAndUpdate(
+      { _id: id, userId, 'walls._id': wallId },
+      {
+        $push: {
+          'walls.$.shelves': {
+            _id: new Types.ObjectId(),
+            ...shelf,
+            cigarCount: 0,
+          },
+        },
+      },
+      { new: true },
+    );
+    if (!result) throw new HttpException('Humidor or wall not found', 404);
+    return result;
+  }
+
+  async deleteWall(id: string, wallId: string, userId: string) {
+    const humidor = await this.humidorModel.findOne({ _id: id, userId });
+    const wall = humidor?.walls?.find((item) => String(item._id) === wallId);
+    if (!humidor || !wall)
+      throw new HttpException('Humidor or wall not found', 404);
+    if (
+      await this.inventoryModel.exists({
+        humidorId: humidor._id,
+        wallId: wall._id,
+      })
+    )
+      throw new HttpException(
+        'Cannot delete: this wall has inventory items',
+        409,
+      );
+    return this.humidorModel.findOneAndUpdate(
+      { _id: id, userId },
+      { $pull: { walls: { _id: wall._id } } },
+      { new: true },
+    );
   }
 
   async updateHumidor(

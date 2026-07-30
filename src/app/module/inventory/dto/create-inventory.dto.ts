@@ -138,6 +138,20 @@ export class CreateInventoryDto {
   humidorId!: string;
 
   @ApiPropertyOptional({
+    description: 'Wall id within the selected humidor room',
+  })
+  @IsOptional()
+  @IsMongoId()
+  wallId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Shelf row id within the selected wall',
+  })
+  @IsOptional()
+  @IsMongoId()
+  shelfId?: string;
+
+  @ApiPropertyOptional({
     example: 'Top Shelf',
     description: 'Shelf name within the Humidor where this inventory is placed',
   })
@@ -147,12 +161,13 @@ export class CreateInventoryDto {
 
   @ApiPropertyOptional({
     example: 2,
-    description: 'Row position inside the selected shelf',
+    description: 'Legacy row position (new locations use shelfId)',
   })
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  shelfRow!: number;
+  shelfRow?: number;
 
   @ApiPropertyOptional({
     example: 3,

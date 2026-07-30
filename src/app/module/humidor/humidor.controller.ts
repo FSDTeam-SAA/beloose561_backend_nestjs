@@ -20,9 +20,14 @@ import {
 import type { Request } from 'express';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
-import { CreateHumidorDto, HumidorShelfDto } from './dto/create-humidor.dto';
+import {
+  CreateHumidorDto,
+  HumidorShelfDto,
+  HumidorWallDto,
+} from './dto/create-humidor.dto';
 import { UpdateHumidorDto } from './dto/update-humidor.dto';
 import { UpdateShelfGridDto } from './dto/update-shelf-grid.dto';
+import { UpdateWallDto } from './dto/update-wall.dto';
 import { HumidorService } from './humidor.service';
 
 @ApiTags('humidor')
@@ -58,7 +63,7 @@ export class HumidorController {
   @ApiQuery({ name: 'name', required: false })
   @ApiQuery({ name: 'location', required: false })
   @ApiQuery({ name: 'description', required: false })
-  @ApiQuery({ name: 'shelfes', required: false })
+  @ApiQuery({ name: 'walls', required: false })
   @HttpCode(HttpStatus.OK)
   async getMyAllHumidor(@Req() req: Request) {
     const filters = pick(req.query, [
@@ -66,7 +71,7 @@ export class HumidorController {
       'name',
       'location',
       'description',
-      'shelfes',
+      'walls',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.humidorService.getMyAllHumidor(
@@ -82,32 +87,108 @@ export class HumidorController {
     };
   }
 
-  @Post(':id/shelf')
-  @ApiOperation({ summary: 'Add a shelf to my Humidor' })
+  @Post(':id/wall')
+  @ApiOperation({ summary: 'Add a wall to my humidor room' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async addWall(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() wall: HumidorWallDto,
+  ) {
+    const result = await this.humidorService.addWall(id, req.user!.id, wall);
+    return { message: 'Wall added successfully', data: result };
+  }
+
+  @Put(':id/wall/:wallId')
+  @ApiOperation({ summary: 'Update a humidor wall' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async updateWall(
+    @Param('id') id: string,
+    @Param('wallId') wallId: string,
+    @Req() req: Request,
+    @Body() update: UpdateWallDto,
+  ) {
+    const result = await this.humidorService.updateWall(
+      id,
+      wallId,
+      req.user!.id,
+      update,
+    );
+    return { message: 'Wall updated successfully', data: result };
+  }
+
+  @Delete(':id/wall/:wallId')
+  @ApiOperation({ summary: 'Delete a humidor wall' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async deleteWall(
+    @Param('id') id: string,
+    @Param('wallId') wallId: string,
+    @Req() req: Request,
+  ) {
+    const result = await this.humidorService.deleteWall(
+      id,
+      wallId,
+      req.user!.id,
+    );
+    return { message: 'Wall deleted successfully', data: result };
+  }
+
+  @Post(':id/wall/:wallId/shelf')
+  @ApiOperation({ summary: 'Add a shelf row to a humidor wall' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.CREATED)
   async addShelf(
     @Param('id') id: string,
+    @Param('wallId') wallId: string,
     @Req() req: Request,
     @Body() shelf: HumidorShelfDto,
   ) {
-    const result = await this.humidorService.addShelf(id, req.user!.id, shelf);
+    const result = await this.humidorService.addShelf(
+      id,
+      wallId,
+      req.user!.id,
+      shelf,
+    );
+    return { message: 'Shelf added successfully', data: result };
+  }
+
+  @Post(':id/shelf')
+  @ApiOperation({ summary: 'Add a legacy shelf grid' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.CREATED)
+  async addLegacyShelf(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() shelf: HumidorShelfDto,
+  ) {
+    const result = await this.humidorService.addLegacyShelf(
+      id,
+      req.user!.id,
+      shelf,
+    );
     return { message: 'Shelf added successfully', data: result };
   }
 
   @Put(':id/shelf/:shelfId/grid')
-  @ApiOperation({ summary: 'Update a shelf row and column capacity' })
+  @ApiOperation({ summary: 'Update a legacy shelf grid' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
   @HttpCode(HttpStatus.OK)
-  async updateShelfGrid(
+  async updateLegacyShelfGrid(
     @Param('id') id: string,
     @Param('shelfId') shelfId: string,
     @Req() req: Request,
     @Body() grid: UpdateShelfGridDto,
   ) {
-    const result = await this.humidorService.updateShelfGrid(
+    const result = await this.humidorService.updateLegacyShelfGrid(
       id,
       shelfId,
       req.user!.id,

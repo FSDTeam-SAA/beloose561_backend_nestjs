@@ -78,23 +78,26 @@ export class InventoryService {
     retailerId: mongoose.Types.ObjectId,
     humidorId: mongoose.Types.ObjectId,
     shelfName: string,
-    shelfRow: number,
+    shelfRow: number | undefined,
     shelfColumn: number,
     excludeInventoryId?: string,
+    wallId?: mongoose.Types.ObjectId,
+    shelfId?: mongoose.Types.ObjectId,
   ) {
     const occupied = await this.inventoryRepository.exists({
       retailerId,
       humidorId,
-      shelfName,
-      shelfRow,
       shelfColumn,
+      ...(wallId && shelfId
+        ? { wallId, shelfId }
+        : { shelfName, shelfRow }),
       ...(excludeInventoryId
         ? { _id: { $ne: new mongoose.Types.ObjectId(excludeInventoryId) } }
         : {}),
     });
     if (occupied) {
       throw new HttpException(
-        `Row ${shelfRow}, column ${shelfColumn} is already occupied`,
+        `${wallId ? 'This shelf' : `Row ${shelfRow}`}, column ${shelfColumn} is already occupied`,
         409,
       );
     }
@@ -115,23 +118,64 @@ export class InventoryService {
       retailerId: retailer._id,
     });
     if (!humidor) throw new HttpException('Humidor not found', 404);
-    const shelf = humidor.shelfes.find(
-      (item) => item.name === createInventoryDto.shelfName,
-    );
-    if (!shelf)
-      throw new HttpException('Shelf not found in selected humidor', 404);
-    this.validateShelfPosition(
-      shelf,
-      createInventoryDto.shelfRow,
-      createInventoryDto.shelfColumn,
-    );
-    await this.ensureShelfCellAvailable(
-      retailer._id,
-      humidor._id,
-      shelf.name,
-      createInventoryDto.shelfRow,
-      createInventoryDto.shelfColumn,
-    );
+    let locationFields: Record<string, unknown>;
+    if (createInventoryDto.wallId && createInventoryDto.shelfId) {
+      const wall = humidor.walls?.find(
+        (item) => String(item._id) === createInventoryDto.wallId,
+      );
+      const shelf = wall?.shelves?.find(
+        (item) => String(item._id) === createInventoryDto.shelfId,
+      );
+      if (!wall || !shelf)
+        throw new HttpException(
+          'Wall or shelf not found in selected humidor',
+          404,
+        );
+      if (createInventoryDto.shelfColumn > wall.columns)
+        throw new HttpException(
+          `Column must be within the wall (1–${wall.columns})`,
+          400,
+        );
+      await this.ensureShelfCellAvailable(
+        retailer._id,
+        humidor._id,
+        shelf.name,
+        undefined,
+        createInventoryDto.shelfColumn,
+        undefined,
+        wall._id,
+        shelf._id,
+      );
+      locationFields = {
+        wallId: wall._id,
+        wallName: wall.name,
+        shelfId: shelf._id,
+        shelfName: shelf.name,
+        shelfRow: undefined,
+      };
+    } else {
+      const shelf = humidor.shelfes?.find(
+        (item) => item.name === createInventoryDto.shelfName,
+      );
+      if (!shelf || !createInventoryDto.shelfRow)
+        throw new HttpException(
+          'Choose a wall and shelf in the selected humidor',
+          400,
+        );
+      this.validateShelfPosition(
+        shelf,
+        createInventoryDto.shelfRow,
+        createInventoryDto.shelfColumn,
+      );
+      await this.ensureShelfCellAvailable(
+        retailer._id,
+        humidor._id,
+        shelf.name,
+        createInventoryDto.shelfRow,
+        createInventoryDto.shelfColumn,
+      );
+      locationFields = {};
+    }
 
     const masterCigar = createInventoryDto.masterCigarId
       ? await this.masterDatabaseModel.findOne({
@@ -199,6 +243,7 @@ export class InventoryService {
       ...staffPickFields,
       ...newArrivalFields,
       ...dailyFeaturedFields,
+      ...locationFields,
       userId: user._id,
       retailerId: retailer._id,
       humidorId: humidor._id,
@@ -415,6 +460,8 @@ export class InventoryService {
     const inventory = await this.getOwnedInventory(userId, id);
     if (
       updateInventoryDto.humidorId ||
+      updateInventoryDto.wallId ||
+      updateInventoryDto.shelfId ||
       updateInventoryDto.shelfName ||
       updateInventoryDto.shelfRow ||
       updateInventoryDto.shelfColumn
@@ -425,25 +472,60 @@ export class InventoryService {
         retailerId: inventory.retailerId,
       });
       if (!humidor) throw new HttpException('Humidor not found', 404);
-      const shelfName = updateInventoryDto.shelfName ?? inventory.shelfName;
-      const shelf = humidor.shelfes.find((item) => item.name === shelfName);
-      if (!shelf)
-        throw new HttpException('Shelf not found in selected humidor', 404);
-      const shelfRow = updateInventoryDto.shelfRow ?? inventory.shelfRow;
       const shelfColumn =
         updateInventoryDto.shelfColumn ?? inventory.shelfColumn;
-      if (!shelfRow || !shelfColumn) {
-        throw new HttpException('Shelf row and column are required', 400);
+      const wallId = updateInventoryDto.wallId ?? inventory.wallId?.toString();
+      const shelfId =
+        updateInventoryDto.shelfId ?? inventory.shelfId?.toString();
+      if (wallId && shelfId) {
+        const wall = humidor.walls?.find(
+          (item) => String(item._id) === wallId,
+        );
+        const shelf = wall?.shelves?.find(
+          (item) => String(item._id) === shelfId,
+        );
+        if (!wall || !shelf)
+          throw new HttpException(
+            'Wall or shelf not found in selected humidor',
+            404,
+          );
+        if (shelfColumn > wall.columns)
+          throw new HttpException(
+            `Column must be within the wall (1–${wall.columns})`,
+            400,
+          );
+        await this.ensureShelfCellAvailable(
+          inventory.retailerId,
+          humidor._id,
+          shelf.name,
+          undefined,
+          shelfColumn,
+          id,
+          wall._id,
+          shelf._id,
+        );
+        updateInventoryDto.wallId = wall._id.toString();
+        updateInventoryDto.shelfId = shelf._id.toString();
+        updateInventoryDto.shelfName = shelf.name;
+        (updateInventoryDto as CreateInventoryDto & { wallName?: string })
+          .wallName = wall.name;
+        updateInventoryDto.shelfRow = undefined;
+      } else {
+        const shelfName = updateInventoryDto.shelfName ?? inventory.shelfName;
+        const shelf = humidor.shelfes?.find((item) => item.name === shelfName);
+        const shelfRow = updateInventoryDto.shelfRow ?? inventory.shelfRow;
+        if (!shelf || !shelfRow)
+          throw new HttpException('Wall and shelf are required', 400);
+        this.validateShelfPosition(shelf, shelfRow, shelfColumn);
+        await this.ensureShelfCellAvailable(
+          inventory.retailerId,
+          humidor._id,
+          shelfName,
+          shelfRow,
+          shelfColumn,
+          id,
+        );
       }
-      this.validateShelfPosition(shelf, shelfRow, shelfColumn);
-      await this.ensureShelfCellAvailable(
-        inventory.retailerId,
-        humidor._id,
-        shelfName,
-        shelfRow,
-        shelfColumn,
-        id,
-      );
     }
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
@@ -762,6 +844,7 @@ export class InventoryService {
       staffPickNote: item.staffPickNote,
       staffPickBy: item.staffPickBy,
       staffPickAddedAt: item.staffPickAddedAt,
+      wallName: item.wallName,
       shelfName: item.shelfName,
       shelfRow: item.shelfRow,
       shelfColumn: item.shelfColumn,
@@ -935,6 +1018,7 @@ export class InventoryService {
       daysShowing,
       autoRemoveDays: item.autoRemoveDays,
       newArrivalExpiresAt: item.newArrivalExpiresAt,
+      wallName: item.wallName,
       shelfName: item.shelfName,
       shelfRow: item.shelfRow,
       shelfColumn: item.shelfColumn,
@@ -1107,6 +1191,7 @@ export class InventoryService {
         typeof featuredPrice === 'number'
           ? Number((item.price - featuredPrice).toFixed(2))
           : undefined,
+      wallName: item.wallName,
       shelfName: item.shelfName,
       shelfRow: item.shelfRow,
       shelfColumn: item.shelfColumn,
@@ -1364,6 +1449,7 @@ export class InventoryService {
       quantity: item.quantity,
       pairingSuggestions: item.pairingSuggestions,
       inStock: item.quantity > 0,
+      wallName: item.wallName,
       shelfName: item.shelfName,
       shelfRow: item.shelfRow,
       shelfColumn: item.shelfColumn,
@@ -1651,6 +1737,7 @@ export class InventoryService {
           anyItem.humidorId && typeof anyItem.humidorId === 'object'
             ? anyItem.humidorId.name
             : undefined,
+        wallName: anyItem.wallName,
         shelfName: anyItem.shelfName,
         shelfRow: anyItem.shelfRow,
         shelfColumn: anyItem.shelfColumn,
@@ -1791,6 +1878,7 @@ export class InventoryService {
             item.humidorId && typeof item.humidorId === 'object'
               ? item.humidorId.name
               : undefined,
+          wallName: item.wallName,
           shelfName: item.shelfName,
           shelfRow: item.shelfRow,
           shelfColumn: item.shelfColumn,
