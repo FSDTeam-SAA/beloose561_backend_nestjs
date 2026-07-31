@@ -30,6 +30,23 @@ export const INVENTORY_SMOKING_TIME_OPTIONS = [
   '120+',
 ] as const;
 
+export const CIGAR_SIZE_OPTIONS = [
+  'Petit Corona',
+  'Gordito',
+  'Robusto',
+  'Corona',
+  'Toro',
+  'Gordo',
+  'Panatela',
+  'Lonsdale',
+  'Churchill',
+  'Lancero',
+  'Double Corona',
+  'Gran Corona',
+] as const;
+
+export type CigarSize = (typeof CIGAR_SIZE_OPTIONS)[number];
+
 // multipart/form-data always sends fields as strings, so an "empty" optional
 // field arrives as '' instead of being omitted, and @IsOptional() doesn't skip it.
 const EmptyToUndefined = () =>
@@ -92,11 +109,11 @@ export class CreateInventoryDto {
   @IsString()
   wrapper?: string;
 
-  @ApiPropertyOptional({ example: 'Toro' })
+  @ApiPropertyOptional({ example: 'Toro', enum: CIGAR_SIZE_OPTIONS })
   @IsOptional()
   @EmptyToUndefined()
-  @IsString()
-  size?: string;
+  @IsIn(CIGAR_SIZE_OPTIONS)
+  size?: CigarSize;
 
   @ApiPropertyOptional({
     example: '60',
