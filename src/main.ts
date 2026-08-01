@@ -21,8 +21,13 @@ async function bootstrap() {
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
 
   app.use(cookieParser());
+  const corsOrigin: string | string[] =
+    config.corsOrigin === '*' || !config.corsOrigin
+      ? '*'
+      : config.corsOrigin.split(',').map((origin) => origin.trim());
+
   app.enableCors({
-    origin: '*',
+    origin: corsOrigin,
     credentials: true,
   });
 
