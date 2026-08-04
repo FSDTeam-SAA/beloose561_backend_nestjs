@@ -24,6 +24,7 @@ import { RetailerBenefitsModule } from './app/module/retailer-benefits/retailer-
 import { NotifationModule } from './app/module/notifation/notifation.module';
 import { SettingsModule } from './app/module/settings/settings.module';
 import { ContactInfoModule } from './app/module/contact-info/contact-info.module';
+import { SocialMediaModule } from './app/module/social-media/social-media.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ContactInfoModule } from './app/module/contact-info/contact-info.module
     NotifationModule,
     SettingsModule,
     ContactInfoModule,
+    SocialMediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
