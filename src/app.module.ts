@@ -23,6 +23,7 @@ import { RetailerHowitworkModule } from './app/module/retailer-howitwork/retaile
 import { RetailerBenefitsModule } from './app/module/retailer-benefits/retailer-benefits.module';
 import { NotifationModule } from './app/module/notifation/notifation.module';
 import { SettingsModule } from './app/module/settings/settings.module';
+import { ContactInfoModule } from './app/module/contact-info/contact-info.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SettingsModule } from './app/module/settings/settings.module';
     RetailerBenefitsModule,
     NotifationModule,
     SettingsModule,
+    ContactInfoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
