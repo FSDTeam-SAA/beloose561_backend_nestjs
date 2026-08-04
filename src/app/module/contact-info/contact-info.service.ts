@@ -5,6 +5,7 @@ import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { IFilterParams } from 'src/app/helpers/pick';
 import { CreateContactInfoDto } from './dto/create-contact-info.dto';
+import { UpdateContactInfoDto } from './dto/update-contact-info.dto';
 import { ContactInfoDocument } from './entities/contact-info.entity';
 
 @Injectable()
@@ -50,11 +51,11 @@ export class ContactInfoService {
     return result;
   }
 
-  async updateContactInfo(id: string, contactInfo: CreateContactInfoDto) {
+  async updateContactInfo(id: string, contactInfo: UpdateContactInfoDto) {
     const result = await this.contactInfoModel.findByIdAndUpdate(
       id,
-      contactInfo,
-      { new: true },
+      { $set: contactInfo },
+      { new: true, runValidators: true, strict: 'throw' },
     );
     if (!result) {
       throw new HttpException('Contact info not found', HttpStatus.NOT_FOUND);
