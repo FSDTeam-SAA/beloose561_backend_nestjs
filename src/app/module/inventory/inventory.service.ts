@@ -88,9 +88,7 @@ export class InventoryService {
       retailerId,
       humidorId,
       shelfColumn,
-      ...(wallId && shelfId
-        ? { wallId, shelfId }
-        : { shelfName, shelfRow }),
+      ...(wallId && shelfId ? { wallId, shelfId } : { shelfName, shelfRow }),
       ...(excludeInventoryId
         ? { _id: { $ne: new mongoose.Types.ObjectId(excludeInventoryId) } }
         : {}),
@@ -202,9 +200,8 @@ export class InventoryService {
             createInventoryDto.strength,
           wrapper: masterCigar.wrapper || createInventoryDto.wrapper,
           smokingTime:
-            this.normalizeMasterSmokingTime(
-              masterCigar.estimatedSmokingTime,
-            ) ?? createInventoryDto.smokingTime,
+            this.normalizeMasterSmokingTime(masterCigar.estimatedSmokingTime) ??
+            createInventoryDto.smokingTime,
           pairingSuggestions: masterCigar.pairingSuggestions?.filter(Boolean)
             .length
             ? masterCigar.pairingSuggestions.filter(Boolean)
@@ -478,9 +475,7 @@ export class InventoryService {
       const shelfId =
         updateInventoryDto.shelfId ?? inventory.shelfId?.toString();
       if (wallId && shelfId) {
-        const wall = humidor.walls?.find(
-          (item) => String(item._id) === wallId,
-        );
+        const wall = humidor.walls?.find((item) => String(item._id) === wallId);
         const shelf = wall?.shelves?.find(
           (item) => String(item._id) === shelfId,
         );
@@ -507,8 +502,9 @@ export class InventoryService {
         updateInventoryDto.wallId = wall._id.toString();
         updateInventoryDto.shelfId = shelf._id.toString();
         updateInventoryDto.shelfName = shelf.name;
-        (updateInventoryDto as CreateInventoryDto & { wallName?: string })
-          .wallName = wall.name;
+        (
+          updateInventoryDto as CreateInventoryDto & { wallName?: string }
+        ).wallName = wall.name;
         updateInventoryDto.shelfRow = undefined;
       } else {
         const shelfName = updateInventoryDto.shelfName ?? inventory.shelfName;
