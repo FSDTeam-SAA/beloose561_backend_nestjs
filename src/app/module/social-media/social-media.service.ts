@@ -99,10 +99,22 @@ export class SocialMediaService {
     id: string,
     updateSocialMediaDto: UpdateSocialMediaDto,
   ) {
-    const payload = {
-      ...updateSocialMediaDto,
-      socialLinks: this.normalizeSocialLinks(updateSocialMediaDto.socialLinks),
-    };
+    const payload: Partial<UpdateSocialMediaDto> = {};
+
+    if (updateSocialMediaDto.description !== undefined) {
+      payload.description = updateSocialMediaDto.description;
+    }
+
+    if (updateSocialMediaDto.isActive !== undefined) {
+      payload.isActive = updateSocialMediaDto.isActive;
+    }
+
+    if (updateSocialMediaDto.socialLinks !== undefined) {
+      payload.socialLinks = this.normalizeSocialLinks(
+        updateSocialMediaDto.socialLinks,
+      );
+    }
+
     const result = await this.socialMediaModel.findByIdAndUpdate(id, payload, {
       new: true,
     });
