@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
 const StringToArray = () =>
   Transform(({ value }) => {
@@ -27,6 +27,12 @@ export class CreateRetailerBenefitDto {
   })
   @IsOptional()
   images?: string[];
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+  })
+  @IsOptional()
+  video?: string[];
 
   @ApiPropertyOptional({ example: '' })
   @IsOptional()
@@ -47,4 +53,9 @@ export class CreateRetailerBenefitDto {
   @IsArray()
   @IsString({ each: true })
   features?: string[];
+
+  @ApiPropertyOptional({ example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

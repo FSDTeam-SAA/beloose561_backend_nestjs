@@ -13,7 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -41,11 +41,23 @@ export class RetailerBenefitsController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 5 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createRetailerBenefitDto: CreateRetailerBenefitDto,
-    @UploadedFiles() files?: Express.Multer.File[],
+    @UploadedFiles()
+    files: {
+      images?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
   ) {
     const result = await this.retailerBenefitsService.createRetailerBenefit(
       createRetailerBenefitDto,
@@ -100,12 +112,24 @@ export class RetailerBenefitsController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 5 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id') id: string,
     @Body() updateRetailerBenefitDto: UpdateRetailerBenefitDto,
-    @UploadedFiles() files?: Express.Multer.File[],
+    @UploadedFiles()
+    files?: {
+      images?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
   ) {
     const result = await this.retailerBenefitsService.updateRetailerBenefit(
       id,
