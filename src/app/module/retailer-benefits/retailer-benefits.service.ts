@@ -21,13 +21,25 @@ export class RetailerBenefitsService {
 
   async createRetailerBenefit(
     createRetailerBenefitDto: CreateRetailerBenefitDto,
-    files?: Express.Multer.File[],
+    files?: {
+      images?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
   ) {
-    if (files?.length) {
-      const uploadedFiles = await Promise.all(
-        files.map((file) => fileUpload.uploadToCloudinary(file)),
+    if (files?.images?.length) {
+      const uploadedImages = await Promise.all(
+        files.images.map((file) => fileUpload.uploadToCloudinary(file)),
       );
-      createRetailerBenefitDto.images = uploadedFiles.map((file) => file.url);
+
+      createRetailerBenefitDto.images = uploadedImages.map((file) => file.url);
+    }
+
+    if (files?.video?.length) {
+      const uploadedVideos = await Promise.all(
+        files.video.map((file) => fileUpload.uploadVideoToCloudinary(file)),
+      );
+
+      createRetailerBenefitDto.video = uploadedVideos.map((file) => file.url);
     }
 
     const result = await this.retailerBenefitModel.create(
@@ -61,28 +73,41 @@ export class RetailerBenefitsService {
   }
 
   async findOneRetailerBenefit(id: string) {
-    const result = await this.retailerBenefitModel.findById(id);
+    const result = await this.retailerBenefitModel.findOne({
+      _id: id,
+      isActive: true,
+    });
     return result;
   }
 
   async updateRetailerBenefit(
     id: string,
     updateRetailerBenefitDto: UpdateRetailerBenefitDto,
-    files?: Express.Multer.File[],
+    files?: {
+      images?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
   ) {
-    if (files?.length) {
-      const uploadedFiles = await Promise.all(
-        files.map((file) => fileUpload.uploadToCloudinary(file)),
+    if (files?.images?.length) {
+      const uploadedImages = await Promise.all(
+        files.images.map((file) => fileUpload.uploadToCloudinary(file)),
       );
-      updateRetailerBenefitDto.images = uploadedFiles.map((file) => file.url);
+      updateRetailerBenefitDto.images = uploadedImages.map((file) => file.url);
     }
 
-    const result = await this.retailerBenefitModel.findByIdAndUpdate(
-      id,
-      updateRetailerBenefitDto,
-      { new: true },
-    );
-    return result;
+    if (files?.video?.length) {
+      const uploadedVideos = await Promise.all(
+        files.video.map((file) => fileUpload.uploadVideoToCloudinary(file)),
+      );
+      updateRetailerBenefitDto.video = uploadedVideos.map((file) => file.url);
+
+      const result = await this.retailerBenefitModel.findByIdAndUpdate(
+        id,
+        updateRetailerBenefitDto,
+        { new: true },
+      );
+      return result;
+    }
   }
 
   async removeRetailerBenefit(id: string) {

@@ -9,6 +9,9 @@ export class RetailerBenefit {
   images!: string[];
 
   @Prop()
+  video!: string[];
+
+  @Prop()
   title!: string;
 
   @Prop()
@@ -16,6 +19,9 @@ export class RetailerBenefit {
 
   @Prop()
   features!: string[];
+
+  @Prop({ default: true })
+  isActive!: boolean;
 }
 
 export const RetailerBenefitSchema =

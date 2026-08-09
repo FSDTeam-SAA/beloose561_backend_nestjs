@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
+import { HttpException } from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
 import { memoryStorage } from 'multer';
 import streamifier from 'streamifier';
-import { v2 as cloudinary } from 'cloudinary';
-import { HttpException } from '@nestjs/common';
 import config from '../config';
 
 cloudinary.config({
@@ -57,6 +57,47 @@ const uploadToCloudinary = async (
   });
 };
 
+const uploadVideoToCloudinary = async (
+  file: Express.Multer.File,
+): Promise<{ url: string; public_id: string }> => {
+  if (!file) {
+    throw new HttpException('No video provided', 400);
+  }
+
+  if (
+    !config.cloudinary.name ||
+    !config.cloudinary.apiKey ||
+    !config.cloudinary.apiSecret
+  ) {
+    throw new HttpException('Cloudinary is not configured', 500);
+  }
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: config.cloudinary.folder,
+        resource_type: 'video',
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        if (!result) {
+          return reject(new Error('Video upload failed'));
+        }
+
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      },
+    );
+
+    streamifier.createReadStream(file.buffer).pipe(uploadStream);
+  });
+};
+
 const deleteFromCloudinary = async (public_id: string): Promise<void> => {
   if (!public_id) return;
   try {
@@ -102,6 +143,7 @@ const uploadBufferToCloudinary = async (
 
 export const fileUpload = {
   uploadToCloudinary,
+  uploadVideoToCloudinary,
   uploadBufferToCloudinary,
   deleteFromCloudinary,
   uploadConfig,
