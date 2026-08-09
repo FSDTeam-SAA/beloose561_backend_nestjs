@@ -599,8 +599,9 @@ export class DashboardService {
 
   async dashboardOverview() {
     const totalRetelier = await this.retailerModel.countDocuments();
-    const totalVerifiRetelier = await this.retailerModel.countDocuments({
-      status: 'approved',
+    const totalVerifiRetelier = await this.userModel.countDocuments({
+      role: 'retailer',
+      verfied: 'verified',
     });
 
     const pendingProduct = await this.inventoryModel.countDocuments({
