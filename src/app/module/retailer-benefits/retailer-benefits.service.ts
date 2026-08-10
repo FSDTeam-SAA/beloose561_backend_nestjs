@@ -100,14 +100,14 @@ export class RetailerBenefitsService {
         files.video.map((file) => fileUpload.uploadVideoToCloudinary(file)),
       );
       updateRetailerBenefitDto.video = uploadedVideos.map((file) => file.url);
-
-      const result = await this.retailerBenefitModel.findByIdAndUpdate(
-        id,
-        updateRetailerBenefitDto,
-        { new: true },
-      );
-      return result;
     }
+
+    const result = await this.retailerBenefitModel.findByIdAndUpdate(
+      id,
+      updateRetailerBenefitDto,
+      { new: true },
+    );
+    return result;
   }
 
   async removeRetailerBenefit(id: string) {
