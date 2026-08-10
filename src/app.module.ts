@@ -25,6 +25,7 @@ import { NotifationModule } from './app/module/notifation/notifation.module';
 import { SettingsModule } from './app/module/settings/settings.module';
 import { ContactInfoModule } from './app/module/contact-info/contact-info.module';
 import { SocialMediaModule } from './app/module/social-media/social-media.module';
+import { RetailerHowitworkTitleModule } from './app/module/retailer-howitwork-title/retailer-howitwork-title.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SocialMediaModule } from './app/module/social-media/social-media.module
     SettingsModule,
     ContactInfoModule,
     SocialMediaModule,
+    RetailerHowitworkTitleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
