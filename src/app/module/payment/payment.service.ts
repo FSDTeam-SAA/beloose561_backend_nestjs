@@ -66,18 +66,30 @@ export class PaymentService {
     });
 
     if (existingPending?.stripePaymentIntentId) {
-      const existingPI = await stripe.paymentIntents.retrieve(
-        existingPending.stripePaymentIntentId,
-      );
-      if (
-        existingPI.status !== 'succeeded' &&
-        existingPI.status !== 'canceled'
-      ) {
-        return {
-          clientSecret: existingPI.client_secret,
-          paymentIntentId: existingPI.id,
-          amount: plan.price,
-        };
+      try {
+        const existingPI = await stripe.paymentIntents.retrieve(
+          existingPending.stripePaymentIntentId,
+        );
+        if (
+          existingPI.status !== 'succeeded' &&
+          existingPI.status !== 'canceled'
+        ) {
+          return {
+            clientSecret: existingPI.client_secret,
+            paymentIntentId: existingPI.id,
+            amount: plan.price,
+          };
+        }
+      } catch (error) {
+        const isMissingPaymentIntent =
+          error instanceof Stripe.errors.StripeInvalidRequestError &&
+          error.code === 'resource_missing';
+
+        // The pending record may reference an intent from an old Stripe
+        // account. In that case, create a replacement below and update it.
+        if (!isMissingPaymentIntent) {
+          throw error;
+        }
       }
     }
 
