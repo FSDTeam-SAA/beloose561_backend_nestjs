@@ -11,7 +11,6 @@ const JsonStringToArray = () =>
     if (Array.isArray(value)) return value;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return JSON.parse(value);
     } catch {
       return value;
