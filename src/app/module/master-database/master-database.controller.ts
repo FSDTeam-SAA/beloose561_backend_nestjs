@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -37,7 +38,7 @@ export class MasterDatabaseController {
 
   @Post()
   @ApiOperation({ summary: 'Create master database' })
-  @ApiConsumes('multipart/form-data')
+  @ApiConsumes('application/json')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.CREATED)
@@ -54,7 +55,6 @@ export class MasterDatabaseController {
     };
   }
 
-  // controller
   @Post('/bulk-upload')
   @ApiOperation({ summary: 'Bulk upload master database' })
   @ApiConsumes('multipart/form-data')
@@ -138,7 +138,7 @@ export class MasterDatabaseController {
 
   @Put('/master-database/:id')
   @ApiOperation({ summary: 'Update master database by id' })
-  @ApiConsumes('multipart/form-data')
+  @ApiConsumes('application/json', 'multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
@@ -157,6 +157,22 @@ export class MasterDatabaseController {
     };
   }
 
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update master cigar fields using JSON' })
+  @ApiConsumes('application/json')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  async updateMasterCigar(
+    @Param('id') id: string,
+    @Body() dto: UpdateMasterDatabaseDto,
+  ) {
+    const result = await this.masterDatabaseService.updateMasterDatabaseById(
+      id,
+      dto,
+    );
+    return { message: 'Master database updated successfully', data: result };
+  }
+
   @Delete('/master-database/:id')
   @ApiOperation({ summary: 'Delete master database by id' })
   @ApiBearerAuth('access-token')
@@ -167,6 +183,17 @@ export class MasterDatabaseController {
       await this.masterDatabaseService.deleteMasterDatabaseById(id);
     return {
       message: 'Master database deleted successfully',
+      data: result,
+    };
+  }
+
+  @Get('upc/:upcCode')
+  @ApiOperation({ summary: 'Get master database by upc code' })
+  @HttpCode(HttpStatus.OK)
+  async getMasterDatabaseByUpcCode(@Param('upcCode') upcCode: string) {
+    const result = await this.masterDatabaseService.findByUpcCode(upcCode);
+    return {
+      message: 'Master database retrieved successfully',
       data: result,
     };
   }

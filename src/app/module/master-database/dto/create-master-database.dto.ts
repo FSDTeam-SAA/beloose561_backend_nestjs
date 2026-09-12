@@ -1,6 +1,8 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsInt,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -17,12 +19,12 @@ export enum MasterDatabaseStatus {
 }
 
 export class CreateMasterDatabaseDto {
-  @ApiPropertyOptional({ example: 'Gran Reserva — Robusto' })
+  @ApiProperty({ example: 'Gran Reserva — Robusto' })
   @IsString()
   @IsNotEmpty()
   productLine!: string;
 
-  @ApiPropertyOptional({ example: 'Arturo Fuente' })
+  @ApiProperty({ example: 'Arturo Fuente' })
   @IsString()
   @IsNotEmpty()
   brand!: string;
@@ -67,4 +69,84 @@ export class CreateMasterDatabaseDto {
   @IsOptional()
   @IsEnum(MasterDatabaseStatus)
   status?: MasterDatabaseStatus;
+
+  @ApiPropertyOptional({
+    example: ['0716103012345', '0716103012352'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.map((code: unknown) =>
+          typeof code === 'string' ? code.trim() : code,
+        )
+      : value,
+  )
+  upcCodes?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  binder?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  filler?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  flavorNotes?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  whyYoullLikeThis?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  size?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  manufacturer?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  length?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  ringGauge?: number;
 }

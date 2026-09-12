@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { isObjectIdOrHexString, Model } from 'mongoose';
 import * as XLSX from 'xlsx';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
@@ -213,6 +213,7 @@ export class MasterDatabaseService {
   }
 
   async getMasterDatabaseById(id: string) {
+    this.validateMasterId(id);
     const masterDatabase = await this.masterBatabaseModel.findById(id);
     if (!masterDatabase) throw new HttpException('not found', 404);
     return masterDatabase;
@@ -222,16 +223,18 @@ export class MasterDatabaseService {
     id: string,
     updateMasterDatabaseDto: UpdateMasterDatabaseDto,
   ) {
+    this.validateMasterId(id);
     const masterDatabase = await this.masterBatabaseModel.findByIdAndUpdate(
       id,
       updateMasterDatabaseDto,
-      { new: true },
+      { new: true, runValidators: true },
     );
     if (!masterDatabase) throw new HttpException('not found', 404);
     return masterDatabase;
   }
 
   async deleteMasterDatabaseById(id: string) {
+    this.validateMasterId(id);
     const inUse = await this.inventoryModel.exists({ masterCigarId: id });
     if (inUse) {
       throw new HttpException(
@@ -241,6 +244,24 @@ export class MasterDatabaseService {
     }
     const masterDatabase = await this.masterBatabaseModel.findByIdAndDelete(id);
     if (!masterDatabase) throw new HttpException('not found', 404);
+    return masterDatabase;
+  }
+
+  private validateMasterId(id: string) {
+    if (!isObjectIdOrHexString(id)) {
+      throw new BadRequestException('Invalid master cigar ID');
+    }
+  }
+
+  async findByUpcCode(upcCode: string) {
+    const code = upcCode.trim();
+    if (!code) throw new BadRequestException('UPC code is required');
+    const masterDatabase = await this.masterBatabaseModel.findOne({
+      upcCodes: code,
+      status: 'active',
+    });
+    if (!masterDatabase)
+      throw new HttpException('Cigar not found for this UPC', 404);
     return masterDatabase;
   }
 }

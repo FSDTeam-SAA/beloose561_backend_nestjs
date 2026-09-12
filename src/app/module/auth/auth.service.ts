@@ -4,10 +4,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { Model } from 'mongoose';
-import sendMailer from 'src/app/helpers/sendMailer';
+import sendMailer from '../../helpers/sendMailer';
 import config from '../../config';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { CustomerRegisterDto } from './dto/customer-register.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,43 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly jwtService: jwt.JwtService,
   ) {}
+
+  async registerCustomer(dto: CustomerRegisterDto, res: Response) {
+    const email = dto.email.trim().toLowerCase();
+    const existingUser = await this.userModel.exists({ email });
+    if (existingUser) throw new HttpException('User already exists', 409);
+
+    // Model.create runs the existing password-hashing save hook.
+    let customer: UserDocument;
+    try {
+      customer = await this.userModel.create({
+        fullName: dto.fullName,
+        email,
+        password: dto.password,
+        role: 'customer',
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throw new HttpException('User already exists', 409);
+      }
+      throw error;
+    }
+
+    // Reuse login so token and refresh-cookie behavior stays consistent.
+    const { accessToken } = await this.login(
+      { email, password: dto.password },
+      res,
+    );
+    return {
+      accessToken,
+      newUser: {
+        id: customer._id,
+        fullName: customer.fullName,
+        email: customer.email,
+        role: customer.role,
+      },
+    };
+  }
 
   async register(CreateAuthDto: CreateAuthDto, res: Response) {
     const user = await this.userModel.findOne({ email: CreateAuthDto.email });
@@ -51,6 +89,9 @@ export class AuthService {
     if (!user) {
       throw new HttpException('User not found', 404);
     }
+    if (user.status === 'suspended') {
+      throw new HttpException('Account is suspended', 403);
+    }
 
     const isPasswordMatch = await bcrypt.compare(
       loginDto.password,
@@ -80,7 +121,11 @@ export class AuthService {
       sameSite: 'strict',
     });
 
-    return { accessToken, user };
+    const publicUser = user.toObject();
+    for (const field of ['password', 'otp', 'otpExpiry', 'verifiedForget']) {
+      Reflect.deleteProperty(publicUser, field);
+    }
+    return { accessToken, user: publicUser };
   }
 
   async forgotPassword(email: string) {

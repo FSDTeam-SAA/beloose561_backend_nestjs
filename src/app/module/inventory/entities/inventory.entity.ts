@@ -207,3 +207,6 @@ export class Inventory {
 }
 
 export const InventorySchema = SchemaFactory.createForClass(Inventory);
+
+InventorySchema.index({ retailerId: 1, masterCigarId: 1 });
+InventorySchema.index({ retailerId: 1, status: 1, quantity: 1 });

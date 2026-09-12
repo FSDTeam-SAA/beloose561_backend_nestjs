@@ -10,8 +10,9 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import AuthGuard from 'src/app/middlewares/auth.guard';
+import AuthGuard from '../../middlewares/auth.guard';
 import { AuthService } from './auth.service';
+import { CustomerRegisterDto } from './dto/customer-register.dto';
 import {
   ChangePasswordDto,
   CreateAuthDto,
@@ -24,6 +25,17 @@ import {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('customer-register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a consumer account' })
+  async registerCustomer(
+    @Body() dto: CustomerRegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.registerCustomer(dto, res);
+    return { message: 'Customer registered successfully', data: result };
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

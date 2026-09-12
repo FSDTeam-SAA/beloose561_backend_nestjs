@@ -1,4 +1,10 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import config from '../../config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import axios from 'axios';
@@ -24,6 +30,44 @@ export class QrcodesService {
 
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
+
+  async resolveStore(value: string) {
+    let storeSlug: string;
+    try {
+      const url = new URL(value.trim());
+      const frontendUrl = new URL(config.frontendUrl);
+      const match = url.pathname.match(/^\/store\/([^/]+)\/?$/);
+      if (
+        !['http:', 'https:'].includes(url.protocol) ||
+        url.origin !== frontendUrl.origin ||
+        !match ||
+        url.username ||
+        url.password
+      ) {
+        throw new Error('Invalid store URL');
+      }
+      storeSlug = decodeURIComponent(match[1]);
+    } catch {
+      throw new BadRequestException(
+        'Use a valid store QR URL from this application',
+      );
+    }
+
+    const retailer = await this.retailerModel
+      .findOne({ storeSlug, status: 'approved' })
+      .select('storeName storeSlug logo address city')
+      .lean();
+    if (!retailer) throw new NotFoundException('Approved store not found');
+    return {
+      retailerId: retailer._id,
+      storeName: retailer.storeName,
+      storeSlug: retailer.storeSlug,
+      logo: retailer.logo,
+      address: retailer.address,
+      city: retailer.city,
+      storeMode: true,
+    };
+  }
 
   async getAllQrcodes() {
     return this.qrCodeModel

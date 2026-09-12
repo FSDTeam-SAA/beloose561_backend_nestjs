@@ -4,6 +4,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConsumerScanModule } from './app/module/consumer-scan/consumer-scan.module';
+import { ConsumerProfileModule } from './app/module/consumer-profile/consumer-profile.module';
+import { ConsumerCigarModule } from './app/module/consumer-cigar/consumer-cigar.module';
+import { ConsumerCatalogModule } from './app/module/consumer-catalog/consumer-catalog.module';
+import { RecommendationModule } from './app/module/recommendation/recommendation.module';
 import config from './app/config';
 import { AuthModule } from './app/module/auth/auth.module';
 import { ContactInfoModule } from './app/module/contact-info/contact-info.module';
@@ -46,6 +51,11 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
     InventoryModule,
     QrcodesModule,
     MasterDatabaseModule,
+    ConsumerScanModule,
+    ConsumerProfileModule,
+    ConsumerCigarModule,
+    ConsumerCatalogModule,
+    RecommendationModule,
     RetailerBannerModule,
     RetailerAboutModule,
     RetailerPlatformModule,

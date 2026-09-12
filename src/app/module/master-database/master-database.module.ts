@@ -24,5 +24,6 @@ import { MasterDatabaseService } from './master-database.service';
   ],
   controllers: [MasterDatabaseController],
   providers: [MasterDatabaseService],
+  exports: [MasterDatabaseService],
 })
 export class MasterDatabaseModule {}

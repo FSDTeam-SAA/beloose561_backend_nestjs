@@ -1613,7 +1613,7 @@ export class InventoryService {
 
     if (dto.smokingTime) {
       const itemSmokingTime: string | undefined =
-        item.smokingTime || item.masterCigarId?.smokingTime;
+        item.smokingTime || this.normalizeMasterSmokingTime(item.masterCigarId?.estimatedSmokingTime);
       const match = itemSmokingTime?.match(/\d+/);
       if (match) {
         const actualMinutes = Number(match[0]);
@@ -1657,7 +1657,7 @@ export class InventoryService {
         quantity: { $gt: 0 },
       })
       .populate('humidorId', 'name')
-      .populate('masterCigarId', 'wrapper smokingTime flavorNotes')
+      .populate('masterCigarId', 'wrapper estimatedSmokingTime flavorNotes')
       .lean();
 
     const ranked = candidates
@@ -1687,7 +1687,7 @@ export class InventoryService {
     const item = await this.inventoryRepository
       .findOne({ _id: id, retailerId: retailer._id })
       .populate('humidorId', 'name')
-      .populate('masterCigarId', 'flavorNotes smokingTime whyYoullLikeThis')
+      .populate('masterCigarId', 'flavorNotes estimatedSmokingTime whyYoullLikeThis')
       .lean();
     if (!item) throw new HttpException('Inventory not found', 404);
 
@@ -1721,7 +1721,7 @@ export class InventoryService {
       image: anyItem.image,
       description: anyItem.description,
       flavorNotes: master?.flavorNotes,
-      smokingTime: anyItem.smokingTime ?? master?.smokingTime,
+      smokingTime: anyItem.smokingTime ?? this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
       pairingSuggestions: anyItem.pairingSuggestions,
       price: anyItem.price,
       displayPrice,
@@ -1792,7 +1792,7 @@ export class InventoryService {
         _id: { $nin: validExcludeIds },
       })
       .populate('humidorId', 'name')
-      .populate('masterCigarId', 'flavorNotes smokingTime')
+      .populate('masterCigarId', 'flavorNotes estimatedSmokingTime')
       .lean();
     if (candidates.length === 0) return comeBackTomorrow;
 
@@ -1864,7 +1864,7 @@ export class InventoryService {
         wrapper: item.wrapper,
         size: item.size,
         image: item.image,
-        smokingTime: item.smokingTime ?? master?.smokingTime,
+        smokingTime: item.smokingTime ?? this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
         flavorNotes: master?.flavorNotes,
         pairingSuggestions: item.pairingSuggestions,
         price: item.price,

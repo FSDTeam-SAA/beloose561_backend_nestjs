@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -12,11 +13,20 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import AuthGuard from '../../middlewares/auth.guard';
 import { QrcodesService } from './qrcodes.service';
+import { ResolveStoreDto } from './dto/resolve-store.dto';
 
 @ApiTags('qrcodes')
 @Controller('qrcodes')
 export class QrcodesController {
   constructor(private readonly qrcodesService: QrcodesService) {}
+
+  @Post('resolve-store')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resolve an existing store QR URL for Store Mode' })
+  async resolveStore(@Body() dto: ResolveStoreDto) {
+    const result = await this.qrcodesService.resolveStore(dto.value);
+    return { message: 'Store identified successfully', data: result };
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all QR codes (admin)' })

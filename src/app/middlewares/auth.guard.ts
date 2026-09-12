@@ -37,9 +37,14 @@ export default function AuthGuard(...roles: string[]): Type<CanActivate> {
       const token = request.headers.authorization?.split(' ')[1];
       if (!token) throw new HttpException('Unauthorized', 401);
 
-      const decoded = this.jwtService.verify<JwtPayload>(token, {
-        secret: config.jwt.accessTokenSecret,
-      });
+      let decoded: JwtPayload;
+      try {
+        decoded = this.jwtService.verify<JwtPayload>(token, {
+          secret: config.jwt.accessTokenSecret,
+        });
+      } catch {
+        throw new HttpException('Unauthorized', 401);
+      }
       if (!decoded) throw new HttpException('Unauthorized', 401);
 
       if (roles.length && !roles.includes(decoded.role)) {
