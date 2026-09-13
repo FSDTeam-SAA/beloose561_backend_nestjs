@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import {
   BadRequestException,
   HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import config from '../../config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import axios from 'axios';
+import { Model } from 'mongoose';
+import config from '../../config';
 import {
   buildStoreQrTarget,
   generateAndUploadQrCode,

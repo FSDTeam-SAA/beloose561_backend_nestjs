@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ConsumerProfile } from './entities/consumer-profile.entity';
 import { UpdateConsumerProfileDto } from './dto/update-consumer-profile.dto';
+import { ConsumerProfile } from './entities/consumer-profile.entity';
 
 @Injectable()
 export class ConsumerProfileService {
@@ -11,8 +11,11 @@ export class ConsumerProfileService {
     private readonly profileModel: Model<ConsumerProfile>,
   ) {}
 
-  getMyProfile(userId: string) {
-    return this.profileModel.findOne({ userId }).lean();
+  async getMyProfile(userId: string) {
+    const result = await this.profileModel
+      .findOne({ userId })
+      .populate('userId');
+    return result;
   }
 
   async updateMyProfile(
