@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
+import * as XLSX from 'xlsx';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import { fileUpload } from '../../helpers/fileUploder';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
@@ -21,6 +23,10 @@ import {
 } from '../retailer/entities/retailer.entity';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { AddStaffPickDto } from './dto/add-staff-pick.dto';
+import {
+  BULK_INVENTORY_FIELDS,
+  BulkInventoryMappingDto,
+} from './dto/bulk-inventory-mapping.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
@@ -54,6 +60,117 @@ export class InventoryService {
     private readonly humidorModel: Model<HumidorDocument>,
     private readonly notifationService: NotifationService,
   ) {}
+
+  previewBulkInventory(
+    file: Express.Multer.File,
+    dto: BulkInventoryMappingDto,
+  ) {
+    if (!file?.buffer?.length) throw new HttpException('File is required', 400);
+    if (!/\.(csv|xlsx|xls)$/i.test(file.originalname)) {
+      throw new HttpException('Upload a CSV, XLSX or XLS file', 400);
+    }
+
+    let workbook: XLSX.WorkBook;
+    try {
+      // raw preserves leading zeroes in CSV barcodes; formatted cells do so in Excel.
+      workbook = XLSX.read(file.buffer, {
+        type: 'buffer',
+        raw: true,
+        sheetRows: 2002,
+      });
+    } catch {
+      throw new HttpException('Unable to read the inventory file', 400);
+    }
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    if (!sheet) throw new HttpException('No sheet found in uploaded file', 400);
+    const range = XLSX.utils.decode_range(
+      sheet['!fullref'] || sheet['!ref'] || 'A1',
+    );
+    if (range.e.r > 2000 || range.e.c > 99) {
+      throw new HttpException(
+        'File must contain at most 2000 data rows and 100 columns',
+        400,
+      );
+    }
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {
+      header: 1,
+      defval: '',
+      raw: false,
+      blankrows: false,
+    });
+    const headers = (rows.shift() || []).map((header) => String(header).trim());
+    if (!headers.length || !rows.length) {
+      throw new HttpException(
+        'Uploaded file must contain headers and data rows',
+        400,
+      );
+    }
+    if (
+      headers.some((header) => !header) ||
+      new Set(headers).size !== headers.length
+    ) {
+      throw new HttpException(
+        'Column headers must be non-empty and unique',
+        400,
+      );
+    }
+
+    const mapping = dto.mapping;
+    if (mapping !== undefined) {
+      if (!mapping || typeof mapping !== 'object' || Array.isArray(mapping)) {
+        throw new HttpException('Mapping must be a JSON object', 400);
+      }
+      const targets = Object.values(mapping);
+      for (const [header, target] of Object.entries(mapping)) {
+        if (!headers.includes(header))
+          throw new HttpException(`Unknown column: ${header}`, 400);
+        if (!BULK_INVENTORY_FIELDS.includes(target)) {
+          throw new HttpException(
+            `Unsupported inventory field: ${target as any}`,
+            400,
+          );
+        }
+      }
+      if (new Set(targets).size !== targets.length) {
+        throw new HttpException('Map each inventory field only once', 400);
+      }
+      if (
+        !['upc', 'quantity', 'price'].every((field) =>
+          targets.includes(field as (typeof targets)[number]),
+        )
+      ) {
+        throw new HttpException(
+          'Mapping must include upc, quantity and price',
+          400,
+        );
+      }
+    }
+
+    const preview = rows
+      .slice(0, 10)
+      .map((row) =>
+        Object.fromEntries(
+          headers.map((header, index) => [header, row[index] ?? '']),
+        ),
+      );
+    return {
+      headers,
+      totalRows: rows.length,
+      preview,
+      availableFields: BULK_INVENTORY_FIELDS,
+      ...(mapping && {
+        mapping,
+        mappedPreview: preview.map((row) =>
+          Object.fromEntries(
+            Object.entries(mapping).map(([header, field]) => [
+              field,
+              row[header],
+            ]),
+          ),
+        ),
+      }),
+    };
+  }
 
   private validateShelfPosition(
     shelf: { rows?: number; columns?: number },
@@ -1613,7 +1730,10 @@ export class InventoryService {
 
     if (dto.smokingTime) {
       const itemSmokingTime: string | undefined =
-        item.smokingTime || this.normalizeMasterSmokingTime(item.masterCigarId?.estimatedSmokingTime);
+        item.smokingTime ||
+        this.normalizeMasterSmokingTime(
+          item.masterCigarId?.estimatedSmokingTime,
+        );
       const match = itemSmokingTime?.match(/\d+/);
       if (match) {
         const actualMinutes = Number(match[0]);
@@ -1687,7 +1807,10 @@ export class InventoryService {
     const item = await this.inventoryRepository
       .findOne({ _id: id, retailerId: retailer._id })
       .populate('humidorId', 'name')
-      .populate('masterCigarId', 'flavorNotes estimatedSmokingTime whyYoullLikeThis')
+      .populate(
+        'masterCigarId',
+        'flavorNotes estimatedSmokingTime whyYoullLikeThis',
+      )
       .lean();
     if (!item) throw new HttpException('Inventory not found', 404);
 
@@ -1721,7 +1844,9 @@ export class InventoryService {
       image: anyItem.image,
       description: anyItem.description,
       flavorNotes: master?.flavorNotes,
-      smokingTime: anyItem.smokingTime ?? this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
+      smokingTime:
+        anyItem.smokingTime ??
+        this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
       pairingSuggestions: anyItem.pairingSuggestions,
       price: anyItem.price,
       displayPrice,
@@ -1864,7 +1989,9 @@ export class InventoryService {
         wrapper: item.wrapper,
         size: item.size,
         image: item.image,
-        smokingTime: item.smokingTime ?? this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
+        smokingTime:
+          item.smokingTime ??
+          this.normalizeMasterSmokingTime(master?.estimatedSmokingTime),
         flavorNotes: master?.flavorNotes,
         pairingSuggestions: item.pairingSuggestions,
         price: item.price,

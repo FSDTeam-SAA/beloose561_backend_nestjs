@@ -29,6 +29,7 @@ import { fileUpload } from '../../helpers/fileUploder';
 import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { AddStaffPickDto } from './dto/add-staff-pick.dto';
+import { BulkInventoryMappingDto } from './dto/bulk-inventory-mapping.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
@@ -46,6 +47,45 @@ import { InventoryService } from './inventory.service';
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
+
+  @Post('bulk/preview')
+  @ApiOperation({
+    summary: 'Preview CSV / Excel inventory with optional column mapping',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        mapping: {
+          type: 'string',
+          description:
+            'Optional JSON: spreadsheet header → inventory field. Required targets: upc, quantity, price. Optional: humidor, wall, shelf, row, column.',
+          example: '{"Barcode":"upc","Qty":"quantity","Retail Price":"price"}',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      ...fileUpload.uploadConfig,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  @HttpCode(HttpStatus.OK)
+  previewBulkInventory(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: BulkInventoryMappingDto,
+  ) {
+    return {
+      message: 'Inventory file parsed successfully',
+      data: this.inventoryService.previewBulkInventory(file, dto),
+    };
+  }
 
   @Get('/my-inventory')
   @ApiOperation({ summary: 'Get my retailer inventory list' })
