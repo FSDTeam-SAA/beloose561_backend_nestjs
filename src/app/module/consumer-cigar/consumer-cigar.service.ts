@@ -5,6 +5,7 @@ import { UserCigar } from './entities/user-cigar.entity';
 import { MasterDatabase } from '../master-database/entities/master-database.entity';
 import { ConsumerActivityService } from '../consumer-activity/consumer-activity.service';
 import { MyCigarsQueryDto } from './dto/consumer-cigar.dto';
+import type { JournalDocument } from '../journal/entities/journal.entity';
 
 @Injectable()
 export class ConsumerCigarService {
@@ -79,6 +80,38 @@ export class ConsumerCigarService {
     );
     await this.activityService.record(userId, 'rating', { cigarId, rating });
     return result;
+  }
+
+  async recordJournal(userId: string, journal: JournalDocument) {
+    const cigarId = String(journal.cigarId);
+    await this.userCigarModel.findOneAndUpdate(
+      { userId, cigarId },
+      {
+        $set: {
+          hasSmoked: true,
+          ...(journal.rating != null ? { rating: journal.rating } : {}),
+        },
+        // Logging an older session must not move the last smoked date backwards.
+        $max: { lastSmokedAt: journal.smokedAt },
+      },
+      { new: true, upsert: true, runValidators: true },
+    );
+    await this.activityService.record(userId, 'smoked', { cigarId });
+    if (journal.rating != null) {
+      await this.activityService.record(userId, 'rating', {
+        cigarId,
+        rating: journal.rating,
+      });
+    }
+    await this.activityService.record(userId, 'journal_created', {
+      journalId: String(journal._id),
+      cigarId,
+      retailerId: journal.retailerId ? String(journal.retailerId) : undefined,
+      rating: journal.rating,
+      flavorTags: journal.flavorTags,
+      strengthImpression: journal.strengthImpression,
+      wouldSmokeAgain: journal.wouldSmokeAgain,
+    });
   }
 
   private async ensureCigarExists(cigarId: string) {

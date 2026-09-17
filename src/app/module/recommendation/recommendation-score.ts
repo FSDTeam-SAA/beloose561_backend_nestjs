@@ -1,12 +1,14 @@
 import { ConsumerProfile } from '../consumer-profile/entities/consumer-profile.entity';
 import { MasterDatabase } from '../master-database/entities/master-database.entity';
 import { smokingTimeInMinutes } from '../../helpers/smokingTime';
+import type { JournalPreferences } from './journal-preferences';
 
 export interface BehaviorPreferences {
   brands: string[];
   strengths: string[];
   searchTerms: string[];
   dislikedCigarIds: string[];
+  journal?: JournalPreferences;
 }
 
 function matches(preferences: string[] | undefined, value: string | undefined) {
@@ -92,6 +94,36 @@ export function scoreCigar(
   if (behavior.dislikedCigarIds.includes(String(cigar._id))) {
     score -= 10;
     reasons.push('Ranked lower because of your previous rating');
+  }
+  if (behavior.journal) {
+    const journal = behavior.journal;
+    const avoided = journal.avoidedCigarIds.includes(String(cigar._id));
+    if (avoided) {
+      score -= 15;
+      reasons.push('Ranked lower based on your smoking journal');
+    } else {
+      const journalFlavors = [
+        ...new Set(
+          (cigar.flavorNotes ?? [])
+            .map((flavor) => flavor.trim().toLowerCase())
+            .filter((flavor) => matches(journal.flavors, flavor)),
+        ),
+      ];
+      if (journalFlavors.length) {
+        score += Math.min(journalFlavors.length * 5, 10);
+        reasons.push(
+          `Matches flavors you enjoyed in your journal: ${journalFlavors.join(', ')}`,
+        );
+      }
+      if (matches(journal.strengths, cigar.strength)) {
+        score += 5;
+        reasons.push('Matches strength you enjoyed in your journal');
+      }
+      if (journal.repeatCigarIds.includes(String(cigar._id))) {
+        score += 5;
+        reasons.push('You would smoke this cigar again');
+      }
+    }
   }
   return {
     matchScore: Math.max(0, Math.min(score, 100)),

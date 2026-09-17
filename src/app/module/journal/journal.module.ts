@@ -9,9 +9,11 @@ import { User, UserSchema } from '../user/entities/user.entity';
 import { Journal, JournalSchema } from './entities/journal.entity';
 import { JournalController } from './journal.controller';
 import { JournalService } from './journal.service';
+import { ConsumerCigarModule } from '../consumer-cigar/consumer-cigar.module';
 
 @Module({
   imports: [
+    ConsumerCigarModule,
     MongooseModule.forFeature([
       { name: Journal.name, schema: JournalSchema },
       { name: MasterDatabase.name, schema: MasterDatabaseSchema },

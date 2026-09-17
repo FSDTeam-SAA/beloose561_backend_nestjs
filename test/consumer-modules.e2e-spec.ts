@@ -6,6 +6,7 @@ import { ConsumerProfileModule } from '../src/app/module/consumer-profile/consum
 import { ConsumerCatalogModule } from '../src/app/module/consumer-catalog/consumer-catalog.module';
 import { RecommendationModule } from '../src/app/module/recommendation/recommendation.module';
 import { QrcodesModule } from '../src/app/module/qrcodes/qrcodes.module';
+import { JournalModule } from '../src/app/module/journal/journal.module';
 
 it('wires consumer modules and exposes the demo routes in Swagger without a live database', async () => {
   const builder = Test.createTestingModule({
@@ -15,6 +16,7 @@ it('wires consumer modules and exposes the demo routes in Swagger without a live
       ConsumerCatalogModule,
       RecommendationModule,
       QrcodesModule,
+      JournalModule,
     ],
   });
   for (const name of [
@@ -27,6 +29,7 @@ it('wires consumer modules and exposes the demo routes in Swagger without a live
     'ConsumerActivity',
     'UserCigar',
     'Qrcode',
+    'Journal',
   ]) {
     builder.overrideProvider(getModelToken(name)).useValue({});
   }
@@ -48,6 +51,8 @@ it('wires consumer modules and exposes the demo routes in Swagger without a live
       '/consumer-cigars/{cigarId}/rating',
       '/consumer/cigars/{cigarId}',
       '/recommendations/me',
+      '/journal',
+      '/journal/{id}',
     ]) {
       expect(swagger.paths).toHaveProperty(`/api/v1${path}`);
     }

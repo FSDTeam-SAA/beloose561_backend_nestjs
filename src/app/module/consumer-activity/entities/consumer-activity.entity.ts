@@ -11,6 +11,7 @@ export const ACTIVITY_TYPES = [
   'remove_want_to_try',
   'smoked',
   'rating',
+  'journal_created',
 ] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
@@ -33,6 +34,18 @@ export class ConsumerActivity {
 
   @Prop()
   searchTerm?: string;
+
+  @Prop({ type: MongoSchema.Types.ObjectId, ref: 'Journal' })
+  journalId?: Types.ObjectId;
+
+  @Prop({ type: [String], default: undefined })
+  flavorTags?: string[];
+
+  @Prop()
+  strengthImpression?: string;
+
+  @Prop()
+  wouldSmokeAgain?: boolean;
 }
 export const ConsumerActivitySchema =
   SchemaFactory.createForClass(ConsumerActivity);

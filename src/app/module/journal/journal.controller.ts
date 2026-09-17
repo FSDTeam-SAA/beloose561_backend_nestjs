@@ -18,7 +18,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import pick from 'src/app/helpers/pick';
+import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { JournalIdDto } from './dto/journal-id.dto';

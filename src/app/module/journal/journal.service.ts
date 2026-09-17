@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, UpdateQuery } from 'mongoose';
-import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
-import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
-import { IFilterParams } from 'src/app/helpers/pick';
+import buildWhereConditions from '../../helpers/buildWhereConditions';
+import paginationHelper, { IOptions } from '../../helpers/pagenation';
+import { IFilterParams } from '../../helpers/pick';
 import {
   MasterDatabase,
   MasterDatabaseDocument,
@@ -16,6 +16,7 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { Journal, JournalDocument } from './entities/journal.entity';
+import { ConsumerCigarService } from '../consumer-cigar/consumer-cigar.service';
 
 @Injectable()
 export class JournalService {
@@ -27,6 +28,7 @@ export class JournalService {
     private readonly retailerModel: Model<RetailerDocument>,
     @InjectModel(MasterDatabase.name)
     private readonly masterDatabaseModel: Model<MasterDatabaseDocument>,
+    private readonly consumerCigarService: ConsumerCigarService,
   ) {}
 
   async createJournal(userId: string, createJournalDto: CreateJournalDto) {
@@ -80,6 +82,7 @@ export class JournalService {
       wouldSmokeAgain: createJournalDto.wouldSmokeAgain,
     });
 
+    await this.consumerCigarService.recordJournal(userId, journal);
     return journal;
   }
 
@@ -87,8 +90,11 @@ export class JournalService {
     const journal = await this.journalModel
       .findOne({ _id: id, userId })
       .populate('userId', 'name email')
-      .populate('cigarId', 'name')
-      .populate('retailerId', 'name');
+      .populate(
+        'cigarId',
+        'brand productLine name image strength wrapper flavorNotes',
+      )
+      .populate('retailerId', 'storeName logo address city');
     if (!journal) {
       throw new NotFoundException('Journal not found');
     }
@@ -102,18 +108,6 @@ export class JournalService {
     }
 
     const updates: UpdateQuery<Journal> = {};
-    if (dto.cigarId != null) {
-      const cigar = await this.masterDatabaseModel
-        .findOne({
-          _id: dto.cigarId,
-          status: 'active',
-        })
-        .select('_id');
-      if (!cigar) {
-        throw new NotFoundException('Master database not found');
-      }
-      updates.cigarId = cigar._id;
-    }
     if (dto.retailerId !== undefined) {
       if (dto.retailerId !== null) {
         const retailer = await this.retailerModel
@@ -186,8 +180,11 @@ export class JournalService {
       .limit(limit)
       .skip(skip)
       .populate('userId', 'name email')
-      .populate('cigarId', 'name')
-      .populate('retailerId', 'name');
+      .populate(
+        'cigarId',
+        'brand productLine name image strength wrapper flavorNotes',
+      )
+      .populate('retailerId', 'storeName logo address city');
 
     const total = await this.journalModel.countDocuments({
       ...whenCondition,

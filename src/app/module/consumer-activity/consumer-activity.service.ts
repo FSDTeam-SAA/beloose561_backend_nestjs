@@ -21,6 +21,10 @@ export class ConsumerActivityService {
       retailerId?: string;
       rating?: number;
       searchTerm?: string;
+      journalId?: string;
+      flavorTags?: string[];
+      strengthImpression?: string;
+      wouldSmokeAgain?: boolean;
     } = {},
   ) {
     return this.activityModel.create({ userId, type, ...data });

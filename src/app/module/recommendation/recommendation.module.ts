@@ -11,6 +11,7 @@ import {
 } from '../master-database/entities/master-database.entity';
 import { RecommendationService } from './recommendation.service';
 import { RecommendationController } from './recommendation.controller';
+import { Journal, JournalSchema } from '../journal/entities/journal.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RecommendationController } from './recommendation.controller';
     ConsumerCatalogModule,
     ConsumerScanModule,
     MongooseModule.forFeature([
+      { name: Journal.name, schema: JournalSchema },
       { name: MasterDatabase.name, schema: MasterDatabaseSchema },
     ]),
   ],

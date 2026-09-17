@@ -10,6 +10,8 @@ import { CatalogQueryDto } from '../consumer-catalog/dto/catalog-query.dto';
 import { MasterDatabase } from '../master-database/entities/master-database.entity';
 import { RecommendationQueryDto } from './dto/recommendation-query.dto';
 import { BehaviorPreferences, scoreCigar } from './recommendation-score';
+import { Journal } from '../journal/entities/journal.entity';
+import { getJournalPreferences } from './journal-preferences';
 
 @Injectable()
 export class RecommendationService {
@@ -21,6 +23,8 @@ export class RecommendationService {
     private readonly scanService: ConsumerScanService,
     @InjectModel(MasterDatabase.name)
     private readonly masterModel: Model<MasterDatabase>,
+    @InjectModel(Journal.name)
+    private readonly journalModel: Model<Journal>,
   ) {}
 
   async getRecommendations(userId: string, query: RecommendationQueryDto) {
@@ -75,6 +79,14 @@ export class RecommendationService {
   ): Promise<BehaviorPreferences> {
     const states = await this.userCigarService.getAllUserStates(userId);
     const activity = await this.activityService.getRecentActivity(userId);
+    // Read live entries so edits/deletions affect journal signals immediately.
+    const journals = await this.journalModel
+      .find({ userId })
+      .sort({ smokedAt: -1, _id: -1 })
+      .limit(100)
+      .select('cigarId rating flavorTags strengthImpression wouldSmokeAgain')
+      .lean();
+    const journalPreferences = getJournalPreferences(journals);
     const dislikedIds = states
       .filter((state) => state.rating != null && state.rating <= 2)
       .map((state) => String(state.cigarId));
@@ -94,7 +106,9 @@ export class RecommendationService {
       .map((event) => String(event.cigarId));
     // Current state wins: an unfavorite or changed rating is reflected immediately.
     const cigarIds = [...new Set([...likedIds, ...exploredIds])].filter(
-      (id) => !dislikedIds.includes(id),
+      (id) =>
+        !dislikedIds.includes(id) &&
+        !journalPreferences.avoidedCigarIds.includes(id),
     );
     const cigars = await this.masterModel
       .find({ _id: { $in: cigarIds }, status: 'active' })
@@ -109,6 +123,7 @@ export class RecommendationService {
         .filter((event) => event.type === 'search' && event.searchTerm)
         .map((event) => event.searchTerm!),
       dislikedCigarIds: dislikedIds,
+      journal: journalPreferences,
     };
   }
 }

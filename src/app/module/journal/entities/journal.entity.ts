@@ -5,10 +5,20 @@ export type JournalDocument = HydratedDocument<Journal>;
 
 @Schema({ timestamps: true })
 export class Journal {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  })
   userId!: Types.ObjectId;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'MasterDatabase' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MasterDatabase',
+    required: true,
+    index: true,
+  })
   cigarId!: Types.ObjectId;
 
   @Prop({
