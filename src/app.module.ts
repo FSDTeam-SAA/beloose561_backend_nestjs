@@ -33,6 +33,7 @@ import { SocialMediaModule } from './app/module/social-media/social-media.module
 import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { UserModule } from './app/module/user/user.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
+import { JournalModule } from './app/module/journal/journal.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
     SocialMediaModule,
     RetailerHowitworkTitleModule,
     QrcodeCronModule,
+    JournalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
