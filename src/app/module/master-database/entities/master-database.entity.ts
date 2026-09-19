@@ -5,29 +5,68 @@ export type MasterDatabaseDocument = HydratedDocument<MasterDatabase>;
 
 @Schema({ timestamps: true })
 export class MasterDatabase {
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   productLine!: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   brand!: string;
 
-  @Prop()
-  strength!: string;
+  @Prop({ type: [String], default: [], index: true })
+  upcCodes!: string[];
 
   @Prop()
-  wrapper!: string;
+  name?: string;
 
   @Prop()
-  estimatedSmokingTime!: string;
+  manufacturer?: string;
 
   @Prop()
+  country?: string;
+
+  @Prop()
+  strength?: string;
+
+  @Prop()
+  wrapper?: string;
+
+  @Prop()
+  binder?: string;
+
+  @Prop({ type: [String], default: [] })
+  filler?: string[];
+
+  @Prop()
+  size?: string;
+
+  @Prop()
+  length?: string;
+
+  @Prop()
+  ringGauge?: number;
+
+  @Prop({ type: [String], default: [] })
+  flavorNotes?: string[];
+
+  @Prop()
+  description?: string;
+
+  @Prop()
+  whyYoullLikeThis?: string;
+
+  @Prop()
+  image?: string;
+
+  @Prop()
+  estimatedSmokingTime?: string;
+
+  @Prop({ type: [String], default: [] })
   pairingSuggestions!: string[];
 
   @Prop()
-  suggestedRetailPriceEach!: number;
+  suggestedRetailPriceEach?: number;
 
   @Prop()
-  suggestedRetailPricePerBox!: number;
+  suggestedRetailPricePerBox?: number;
 
   @Prop({
     enum: ['active', 'under_review', 'out_of_stock', 'inactive'],
@@ -39,8 +78,10 @@ export class MasterDatabase {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Retailer',
   })
-  submittedByRetailer!: mongoose.Types.ObjectId;
+  submittedByRetailer?: mongoose.Types.ObjectId;
 }
 
 export const MasterDatabaseSchema =
   SchemaFactory.createForClass(MasterDatabase);
+
+MasterDatabaseSchema.index({ brand: 1, productLine: 1 });

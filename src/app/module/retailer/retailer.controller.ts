@@ -6,6 +6,8 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
+  Query,
   Post,
   Put,
   Req,
@@ -28,11 +30,41 @@ import AuthGuard from '../../middlewares/auth.guard';
 import { CreateRetailerDto } from './dto/create-retailer.dto';
 import { UpdateRetailerDto } from './dto/update-retailer.dto';
 import { RetailerService } from './retailer.service';
+import {
+  NearbyRetailersDto,
+  UpdateRetailerLocationDto,
+} from './dto/retailer-location.dto';
 
 @ApiTags('retailer')
 @Controller('retailer')
 export class RetailerController {
   constructor(private readonly retailerService: RetailerService) {}
+
+  @Patch('me/location')
+  @ApiOperation({ summary: 'Save GPS coordinates for my store' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  async updateLocation(
+    @Req() req: Request,
+    @Body() dto: UpdateRetailerLocationDto,
+  ) {
+    return {
+      message: 'Store location updated',
+      data: await this.retailerService.updateLocation(req.user!.id, dto),
+    };
+  }
+
+  @Get('nearby')
+  @ApiOperation({
+    summary:
+      'Find approved nearby stores, nearest first; distance is in meters',
+  })
+  async nearby(@Query() dto: NearbyRetailersDto) {
+    return {
+      message: 'Nearby retailers retrieved successfully',
+      ...(await this.retailerService.nearby(dto)),
+    };
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create retailer' })

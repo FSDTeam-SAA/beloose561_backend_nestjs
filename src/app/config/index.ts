@@ -1,5 +1,5 @@
-import path from 'path';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
@@ -44,6 +44,9 @@ export default {
     to: process.env.EMAIL_TO,
     admin: process.env.ADMIN_EMAIL,
     senderName: process.env.EMAIL_SENDER_NAME || 'NestJS Boilerplate',
+  },
+  googleMaps: {
+    apiKey: process.env.GOOGLE_MAP_API_KEY,
   },
   stripe: {
     publicKey: process.env.STRIPE_PUBLISHABLE_KEY,
