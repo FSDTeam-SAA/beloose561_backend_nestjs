@@ -4,6 +4,7 @@ import { Model, UpdateQuery } from 'mongoose';
 import buildWhereConditions from '../../helpers/buildWhereConditions';
 import paginationHelper, { IOptions } from '../../helpers/pagenation';
 import { IFilterParams } from '../../helpers/pick';
+import { ConsumerCigarService } from '../consumer-cigar/consumer-cigar.service';
 import {
   MasterDatabase,
   MasterDatabaseDocument,
@@ -16,7 +17,6 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { UpdateJournalDto } from './dto/update-journal.dto';
 import { Journal, JournalDocument } from './entities/journal.entity';
-import { ConsumerCigarService } from '../consumer-cigar/consumer-cigar.service';
 
 @Injectable()
 export class JournalService {

@@ -17,7 +17,6 @@ export class Journal {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'MasterDatabase',
     required: true,
-    index: true,
   })
   cigarId!: Types.ObjectId;
 
