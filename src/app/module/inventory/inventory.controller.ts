@@ -30,6 +30,10 @@ import pick from '../../helpers/pick';
 import AuthGuard from '../../middlewares/auth.guard';
 import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import { BulkInventoryMappingDto } from './dto/bulk-inventory-mapping.dto';
+import {
+  BulkInventoryImportDto,
+  BulkInventoryValidateDto,
+} from './dto/bulk-inventory.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto } from './dto/feature-inventory.dto';
@@ -64,7 +68,7 @@ export class InventoryController {
         mapping: {
           type: 'string',
           description:
-            'Optional JSON: spreadsheet header → inventory field. Required targets: upc, quantity, price. Optional: humidor, wall, shelf, row, column.',
+            'Optional JSON: spreadsheet header → inventory field. Required targets: upc, quantity, price. Optional: pricePerBox, humidor, wall, shelf, row, column, shelfRow, shelfColumn. Import requires pricePerBox and a complete location.',
           example: '{"Barcode":"upc","Qty":"quantity","Retail Price":"price"}',
         },
       },
@@ -84,6 +88,45 @@ export class InventoryController {
     return {
       message: 'Inventory file parsed successfully',
       data: this.inventoryService.previewBulkInventory(file, dto),
+    };
+  }
+
+  @Post('bulk/validate')
+  @ApiOperation({
+    summary:
+      'Validate mapped rows without saving; errors use 1-based row numbers',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async validateBulkInventory(
+    @Req() req: Request,
+    @Body() dto: BulkInventoryValidateDto,
+  ) {
+    return {
+      message: 'Bulk inventory validation completed',
+      data: await this.inventoryService.validateBulkInventory(
+        req.user!.id,
+        dto,
+      ),
+    };
+  }
+
+  @Post('bulk/import')
+  @ApiOperation({
+    summary:
+      'Revalidate and upsert valid rows; quantities replace existing stock',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('retailer'))
+  @HttpCode(HttpStatus.OK)
+  async importBulkInventory(
+    @Req() req: Request,
+    @Body() dto: BulkInventoryImportDto,
+  ) {
+    return {
+      message: 'Bulk inventory import completed',
+      data: await this.inventoryService.importBulkInventory(req.user!.id, dto),
     };
   }
 

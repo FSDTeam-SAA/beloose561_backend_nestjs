@@ -16,6 +16,10 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateRetailerDto, RetailerStatus } from './dto/create-retailer.dto';
 import { UpdateRetailerDto } from './dto/update-retailer.dto';
 import { Retailer, RetailerDocument } from './entities/retailer.entity';
+import {
+  NearbyRetailersDto,
+  UpdateRetailerLocationDto,
+} from './dto/retailer-location.dto';
 
 @Injectable()
 export class RetailerService {
@@ -29,6 +33,69 @@ export class RetailerService {
 
     private readonly notifationService: NotifationService,
   ) {}
+
+  async updateLocation(userId: string, dto: UpdateRetailerLocationDto) {
+    const retailer = await this.retailerModel.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          location: {
+            type: 'Point',
+            coordinates: [dto.longitude, dto.latitude],
+          },
+        },
+      },
+      { new: true, runValidators: true },
+    );
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    return retailer;
+  }
+
+  async nearby(dto: NearbyRetailersDto) {
+    const { lat, lng, radius, page, limit } = dto;
+    const [result] = await this.retailerModel.aggregate<{
+      data: Record<string, unknown>[];
+      count: { total: number }[];
+    }>([
+      {
+        $geoNear: {
+          near: { type: 'Point', coordinates: [lng, lat] },
+          key: 'location',
+          distanceField: 'distance',
+          maxDistance: radius,
+          spherical: true,
+          query: { status: 'approved' },
+        },
+      },
+      { $sort: { distance: 1, _id: 1 } },
+      {
+        $facet: {
+          count: [{ $count: 'total' }],
+          data: [
+            { $skip: (page - 1) * limit },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 0,
+                retailerId: '$_id',
+                storeName: 1,
+                storeSlug: 1,
+                logo: 1,
+                address: 1,
+                city: 1,
+                location: 1,
+                distance: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+    return {
+      meta: { page, limit, total: result?.count[0]?.total ?? 0 },
+      data: result?.data ?? [],
+    };
+  }
 
   async createRetailer(userId: string, createRetailerDto: CreateRetailerDto) {
     const user = await this.userModel.findById(userId);

@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import config from './app/config';
 import { GlobalExceptionFilter } from './app/middlewares/globalErrors.filter';
@@ -11,7 +12,7 @@ import { UtilsInterceptor } from './app/utils/utils.interceptor';
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger:
       config.env === 'production'
         ? ['error', 'warn']
@@ -19,6 +20,8 @@ async function bootstrap() {
   });
 
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
+  // Mapped bulk inventory batches can exceed Express's default 100 KB.
+  app.useBodyParser('json', { limit: '2mb' });
 
   app.use(cookieParser());
   const corsOrigin: string | string[] =

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
@@ -28,6 +27,7 @@ import {
   BulkInventoryMappingDto,
 } from './dto/bulk-inventory-mapping.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
+import { BulkInventoryValidateDto } from './dto/bulk-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
 import {
@@ -160,6 +160,14 @@ export class InventoryService {
       availableFields: BULK_INVENTORY_FIELDS,
       ...(mapping && {
         mapping,
+        mappedRows: rows.map((row) =>
+          Object.fromEntries(
+            Object.entries(mapping).map(([header, field]) => [
+              field,
+              row[headers.indexOf(header)] ?? '',
+            ]),
+          ),
+        ),
         mappedPreview: preview.map((row) =>
           Object.fromEntries(
             Object.entries(mapping).map(([header, field]) => [
@@ -169,6 +177,278 @@ export class InventoryService {
           ),
         ),
       }),
+    };
+  }
+
+  private async prepareBulkInventory(
+    userId: string,
+    dto: BulkInventoryValidateDto,
+  ) {
+    if (!Array.isArray(dto.rows) || !dto.rows.length || dto.rows.length > 2000)
+      throw new HttpException('Provide between 1 and 2000 rows', 400);
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+    const retailer = await this.retailerModel.findOne({ userId: user._id });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+    const text = (value: unknown) =>
+      typeof value === 'string' ? value.trim() : '';
+    const number = (value: unknown) => {
+      if (typeof value === 'number') return value;
+      if (
+        typeof value !== 'string' ||
+        !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value.trim())
+      )
+        return NaN;
+      return Number(value.trim());
+    };
+    const [masters, humidors, existing] = await Promise.all([
+      this.masterDatabaseModel
+        .find({
+          upcCodes: { $in: dto.rows.map((r) => text(r?.upc)).filter(Boolean) },
+          status: 'active',
+        })
+        .lean(),
+      this.humidorModel
+        .find({ userId: user._id, retailerId: retailer._id, isActive: true })
+        .lean(),
+      this.inventoryRepository
+        .find({ retailerId: retailer._id })
+        .select(
+          'masterCigarId humidorId wallId shelfId shelfName shelfRow shelfColumn',
+        )
+        .lean(),
+    ]);
+    const errors: { row: number; upc: string; reason: string }[] = [];
+    const masterByUpc = new Map<string, typeof masters>();
+    for (const master of masters) {
+      for (const upc of new Set(master.upcCodes)) {
+        masterByUpc.set(upc, [...(masterByUpc.get(upc) ?? []), master]);
+      }
+    }
+    const prepared: {
+      row: number;
+      upc: string;
+      filter: Record<string, unknown>;
+      values: Record<string, unknown>;
+    }[] = [];
+    const cells = new Set<string>();
+    for (const [index, input] of dto.rows.entries()) {
+      const upc = text(input?.upc);
+      try {
+        if (!input || typeof input !== 'object' || Array.isArray(input))
+          throw new Error('Row must be an object');
+        if (!upc) throw new Error('UPC is required and must be a string');
+        const matches = masterByUpc.get(upc) ?? [];
+        if (matches.length !== 1)
+          throw new Error(
+            matches.length
+              ? 'UPC matches multiple master cigars'
+              : 'UPC not found in Master Database',
+          );
+        const master = matches[0];
+        const quantity = number(input.quantity),
+          price = number(input.price),
+          pricePerBox = number(input.pricePerBox);
+        if (!Number.isSafeInteger(quantity) || quantity < 0)
+          throw new Error('Quantity must be a non-negative integer');
+        if (!Number.isFinite(price) || price < 0)
+          throw new Error('Price must be a non-negative number');
+        if (!Number.isFinite(pricePerBox) || pricePerBox < 0)
+          throw new Error('Price per box must be a non-negative number');
+        const rooms = humidors.filter((h) => h.name === text(input.humidor));
+        if (rooms.length !== 1)
+          throw new Error('Humidor not found or name is ambiguous');
+        const humidor = rooms[0];
+        const column = number(input.shelfColumn ?? input.column);
+        if (!Number.isSafeInteger(column) || column < 1)
+          throw new Error('Column must be a positive integer');
+        if (
+          input.shelfColumn !== undefined &&
+          input.column !== undefined &&
+          number(input.column) !== column
+        )
+          throw new Error('Conflicting column values');
+        const location: Record<string, unknown> = {
+          humidorId: humidor._id,
+          shelfColumn: column,
+        };
+        if (text(input.wall)) {
+          const walls =
+            humidor.walls?.filter((w) => w.name === text(input.wall)) ?? [];
+          if (walls.length !== 1)
+            throw new Error('Wall not found or name is ambiguous');
+          const wall = walls[0];
+          const shelves = wall.shelves.filter(
+            (sh) => sh.name === text(input.shelf),
+          );
+          if (shelves.length !== 1)
+            throw new Error('Shelf not found in wall or name is ambiguous');
+          if (column > wall.columns)
+            throw new Error('Column exceeds wall columns');
+          Object.assign(location, {
+            wallId: wall._id,
+            wallName: wall.name,
+            shelfId: shelves[0]._id,
+            shelfName: shelves[0].name,
+          });
+        } else {
+          const shelves =
+            humidor.shelfes?.filter((sh) => sh.name === text(input.shelf)) ??
+            [];
+          if (shelves.length !== 1)
+            throw new Error('Choose a valid wall and shelf, or a legacy shelf');
+          const row = number(input.shelfRow ?? input.row);
+          if (!Number.isSafeInteger(row) || row < 1)
+            throw new Error(
+              'Row must be a positive integer for legacy shelves',
+            );
+          if (
+            input.shelfRow !== undefined &&
+            input.row !== undefined &&
+            number(input.row) !== row
+          )
+            throw new Error('Conflicting row values');
+          this.validateShelfPosition(shelves[0], row, column);
+          Object.assign(location, {
+            shelfName: shelves[0].name,
+            shelfRow: row,
+          });
+        }
+        const filter = {
+          retailerId: retailer._id,
+          masterCigarId: master._id,
+          humidorId: humidor._id,
+          shelfColumn: column,
+          ...(location.wallId
+            ? { wallId: location.wallId, shelfId: location.shelfId }
+            : {
+                wallId: null,
+                shelfName: location.shelfName,
+                shelfRow: location.shelfRow,
+              }),
+        };
+        const key = JSON.stringify([
+          String(humidor._id),
+          String(location.wallId ?? ''),
+          String(location.shelfId ?? location.shelfName),
+          location.shelfRow,
+          column,
+        ]);
+        if (cells.has(key))
+          throw new Error('Duplicate shelf cell in this batch');
+        const occupants = existing.filter(
+          (item) =>
+            String(item.humidorId) === String(humidor._id) &&
+            item.shelfColumn === column &&
+            (location.wallId
+              ? String(item.wallId) === String(location.wallId) &&
+                String(item.shelfId) === String(location.shelfId)
+              : !item.wallId &&
+                item.shelfName === location.shelfName &&
+                item.shelfRow === location.shelfRow),
+        );
+        if (
+          occupants.length > 1 ||
+          occupants.some(
+            (item) => String(item.masterCigarId) !== String(master._id),
+          )
+        )
+          throw new Error('Shelf cell is already occupied');
+        cells.add(key);
+        prepared.push({
+          row: index + 1,
+          upc,
+          filter,
+          values: {
+            ...location,
+            userId: user._id,
+            retailerId: retailer._id,
+            masterCigarId: master._id,
+            quantity,
+            price,
+            pricePerBox,
+            status: quantity > 0 ? 'active' : 'out_of_stock',
+            name: master.name || master.productLine,
+            productLine: master.productLine,
+            brand: master.brand,
+            wrapper: master.wrapper,
+            size: master.size,
+            image: master.image,
+            description: master.description,
+            strength: this.normalizeMasterStrength(master.strength),
+            smokingTime: this.normalizeMasterSmokingTime(
+              master.estimatedSmokingTime,
+            ),
+            pairingSuggestions: master.pairingSuggestions,
+          },
+        });
+      } catch (error) {
+        errors.push({
+          row: index + 1,
+          upc,
+          reason: error instanceof Error ? error.message : 'Invalid row',
+        });
+      }
+    }
+    return { prepared, errors, total: dto.rows.length };
+  }
+
+  async validateBulkInventory(userId: string, dto: BulkInventoryValidateDto) {
+    const { prepared, errors, total } = await this.prepareBulkInventory(
+      userId,
+      dto,
+    );
+    return { total, valid: prepared.length, invalid: errors.length, errors };
+  }
+
+  async importBulkInventory(userId: string, dto: BulkInventoryValidateDto) {
+    const { prepared, errors, total } = await this.prepareBulkInventory(
+      userId,
+      dto,
+    );
+    let imported = 0;
+    if (prepared.length) {
+      try {
+        const result = await this.inventoryRepository.bulkWrite(
+          prepared.map((item) => ({
+            updateOne: {
+              filter: item.filter,
+              update: { $set: item.values },
+              upsert: true,
+            },
+          })),
+          { ordered: false },
+        );
+        imported = result.matchedCount + result.upsertedCount;
+      } catch (error) {
+        // Only report confirmed row failures. Network/write-concern failures propagate.
+        if (
+          !(error instanceof mongoose.mongo.MongoBulkWriteError) ||
+          error.result.getWriteConcernError()
+        )
+          throw error;
+        const writeErrors = error.result.getWriteErrors();
+        if (!writeErrors.length) throw error;
+        imported = error.result.matchedCount + error.result.upsertedCount;
+        for (const failure of writeErrors) {
+          const item = prepared[failure.index];
+          errors.push({
+            row: item.row,
+            upc: item.upc,
+            reason: 'Database rejected this inventory row',
+          });
+        }
+      }
+      if (imported)
+        await this.userModel.findByIdAndUpdate(userId, {
+          $set: { isInventory: true },
+        });
+    }
+    return {
+      total,
+      imported,
+      failed: errors.length,
+      errors: errors.sort((a, b) => a.row - b.row),
     };
   }
 
