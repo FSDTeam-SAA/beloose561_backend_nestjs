@@ -24,6 +24,18 @@ export class MasterDatabase {
   country?: string;
 
   @Prop()
+  originRegion?: string;
+
+  @Prop()
+  vitola?: string;
+
+  @Prop()
+  thumbnail?: string;
+
+  @Prop()
+  tastingNotes?: string;
+
+  @Prop()
   strength?: string;
 
   @Prop()

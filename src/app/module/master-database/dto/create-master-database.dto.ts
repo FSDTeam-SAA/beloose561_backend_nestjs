@@ -95,6 +95,26 @@ export class CreateMasterDatabaseDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  originRegion?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  vitola?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  thumbnail?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tastingNotes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   binder?: string;
 
   @ApiPropertyOptional({ type: [String] })
