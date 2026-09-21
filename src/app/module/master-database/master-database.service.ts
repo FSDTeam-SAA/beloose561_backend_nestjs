@@ -9,7 +9,10 @@ import {
   Inventory,
   InventoryDocument,
 } from '../inventory/entities/inventory.entity';
-import { CreateMasterDatabaseDto } from './dto/create-master-database.dto';
+import {
+  CreateMasterDatabaseDto,
+  MasterDatabaseStatus,
+} from './dto/create-master-database.dto';
 import { UpdateMasterDatabaseDto } from './dto/update-master-database.dto';
 import {
   MasterDatabase,
@@ -60,6 +63,7 @@ export class MasterDatabaseService {
 
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
       defval: '',
+      raw: false,
     });
     if (!rows.length) {
       throw new BadRequestException('Uploaded file is empty');
@@ -138,17 +142,23 @@ export class MasterDatabaseService {
     const brand = this.getValue(row, 'brand');
     if (!productLine || !brand) return null;
 
-    const pairingRaw = this.getValue(
-      row,
-      'pairingSuggestions',
-      'pairing suggestions',
-    );
-    const pairingSuggestions = pairingRaw
-      ? pairingRaw
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
+    const list = (...aliases: string[]) =>
+      this.getValue(row, ...aliases)
+        .split(/[|,]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    const status =
+      this.getValue(row, 'status').toLowerCase() || MasterDatabaseStatus.ACTIVE;
+    const ringGaugeRaw = this.getValue(row, 'ringGauge');
+    const ringGauge = ringGaugeRaw ? Number(ringGaugeRaw) : undefined;
+    if (
+      !Object.values(MasterDatabaseStatus).includes(
+        status as MasterDatabaseStatus,
+      ) ||
+      (ringGauge !== undefined &&
+        (!Number.isInteger(ringGauge) || ringGauge < 1))
+    )
+      return null;
 
     const eachRaw = this.getValue(
       row,
@@ -165,6 +175,23 @@ export class MasterDatabaseService {
     return {
       productLine,
       brand,
+      name: this.getValue(row, 'name', 'cigar name'),
+      manufacturer: this.getValue(row, 'manufacturer'),
+      country: this.getValue(row, 'country', 'country of origin'),
+      originRegion: this.getValue(row, 'originRegion'),
+      upcCodes: list('upcCodes', 'upc'),
+      binder: this.getValue(row, 'binder'),
+      filler: list('filler'),
+      vitola: this.getValue(row, 'vitola'),
+      size: this.getValue(row, 'size'),
+      length: this.getValue(row, 'length'),
+      ringGauge,
+      flavorNotes: list('flavorNotes', 'flavor profiles'),
+      tastingNotes: this.getValue(row, 'tastingNotes'),
+      description: this.getValue(row, 'description'),
+      whyYoullLikeThis: this.getValue(row, 'whyYoullLikeThis'),
+      image: this.getValue(row, 'image', 'images'),
+      thumbnail: this.getValue(row, 'thumbnail'),
       strength: this.getValue(row, 'strength'),
       wrapper: this.getValue(row, 'wrapper'),
       estimatedSmokingTime: this.getValue(
@@ -172,10 +199,10 @@ export class MasterDatabaseService {
         'estimatedSmokingTime',
         'estimated smoking time',
       ),
-      pairingSuggestions,
+      pairingSuggestions: list('pairingSuggestions'),
       suggestedRetailPriceEach: this.parsePrice(eachRaw),
       suggestedRetailPricePerBox: this.parsePrice(boxRaw),
-      status: 'active',
+      status,
     };
   }
 

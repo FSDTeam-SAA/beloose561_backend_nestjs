@@ -24,10 +24,15 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { AddStaffPickDto } from './dto/add-staff-pick.dto';
 import {
   BULK_INVENTORY_FIELDS,
+  BulkInventoryField,
   BulkInventoryMappingDto,
 } from './dto/bulk-inventory-mapping.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { BulkInventoryValidateDto } from './dto/bulk-inventory.dto';
+import {
+  BulkInventoryImportDto,
+  BulkInventoryRowDto,
+  BulkInventoryValidateDto,
+} from './dto/bulk-inventory.dto';
 import { DiscountInventoryDto } from './dto/discount-inventory.dto';
 import { FeatureInventoryDto, FeatureType } from './dto/feature-inventory.dto';
 import {
@@ -115,7 +120,34 @@ export class InventoryService {
       );
     }
 
-    const mapping = dto.mapping;
+    // Preserve formatted identifiers, but use underlying Excel numbers for stock/prices.
+    const rawRows = XLSX.utils
+      .sheet_to_json<unknown[]>(sheet, {
+        header: 1,
+        defval: '',
+        raw: true,
+        blankrows: false,
+      })
+      .slice(1);
+    const normalizeHeader = (value: string) =>
+      value.toLowerCase().replace(/\s+/g, '');
+    const inferredMapping: Record<string, BulkInventoryField> = {};
+    for (const header of headers) {
+      const field = BULK_INVENTORY_FIELDS.find(
+        (field) => normalizeHeader(field) === normalizeHeader(header),
+      );
+      if (field) inferredMapping[header] = field;
+    }
+    const mapping =
+      dto.mapping !== undefined
+        ? dto.mapping
+        : ['upc', 'quantity', 'price'].every((field) =>
+              Object.values(inferredMapping).includes(
+                field as BulkInventoryField,
+              ),
+            )
+          ? inferredMapping
+          : undefined;
     if (mapping !== undefined) {
       if (!mapping || typeof mapping !== 'object' || Array.isArray(mapping)) {
         throw new HttpException('Mapping must be a JSON object', 400);
@@ -153,6 +185,31 @@ export class InventoryService {
           headers.map((header, index) => [header, row[index] ?? '']),
         ),
       );
+    const numericFields: BulkInventoryField[] = [
+      'quantity',
+      'price',
+      'pricePerBox',
+      'row',
+      'column',
+      'shelfRow',
+      'shelfColumn',
+    ];
+    const mappedRows = mapping
+      ? rows.map((row, rowIndex) =>
+          Object.fromEntries(
+            Object.entries(mapping).map(([header, field]) => {
+              const columnIndex = headers.indexOf(header);
+              const rawValue = rawRows[rowIndex][columnIndex];
+              return [
+                field,
+                numericFields.includes(field) && typeof rawValue === 'number'
+                  ? rawValue
+                  : (row[columnIndex] ?? ''),
+              ];
+            }),
+          ),
+        )
+      : undefined;
     return {
       headers,
       totalRows: rows.length,
@@ -160,22 +217,8 @@ export class InventoryService {
       availableFields: BULK_INVENTORY_FIELDS,
       ...(mapping && {
         mapping,
-        mappedRows: rows.map((row) =>
-          Object.fromEntries(
-            Object.entries(mapping).map(([header, field]) => [
-              field,
-              row[headers.indexOf(header)] ?? '',
-            ]),
-          ),
-        ),
-        mappedPreview: preview.map((row) =>
-          Object.fromEntries(
-            Object.entries(mapping).map(([header, field]) => [
-              field,
-              row[header],
-            ]),
-          ),
-        ),
+        mappedRows,
+        mappedPreview: mappedRows?.slice(0, 10),
       }),
     };
   }
@@ -401,10 +444,32 @@ export class InventoryService {
     return { total, valid: prepared.length, invalid: errors.length, errors };
   }
 
-  async importBulkInventory(userId: string, dto: BulkInventoryValidateDto) {
+  async importBulkInventory(
+    userId: string,
+    dto: BulkInventoryImportDto,
+    file?: Express.Multer.File,
+  ) {
+    if (file && dto.rows !== undefined) {
+      throw new HttpException('Provide either a file or rows, not both', 400);
+    }
+    let rows = dto.rows;
+    if (file) {
+      const preview = this.previewBulkInventory(file, dto);
+      if (!preview.mappedRows) {
+        throw new HttpException(
+          'Unable to map file headers. Provide mapping for upc, quantity and price',
+          400,
+        );
+      }
+      rows = preview.mappedRows as unknown as BulkInventoryRowDto[];
+    } else if (dto.mapping !== undefined) {
+      throw new HttpException('Mapping requires an uploaded file', 400);
+    }
+    if (!rows)
+      throw new HttpException('Upload a CSV/Excel file or provide rows', 400);
     const { prepared, errors, total } = await this.prepareBulkInventory(
       userId,
-      dto,
+      { rows },
     );
     let imported = 0;
     if (prepared.length) {

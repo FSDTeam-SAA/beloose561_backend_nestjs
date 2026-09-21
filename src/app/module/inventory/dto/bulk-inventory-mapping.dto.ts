@@ -22,11 +22,22 @@ export type BulkInventoryField = (typeof BULK_INVENTORY_FIELDS)[number];
 export class BulkInventoryMappingDto {
   @ApiPropertyOptional({
     description: 'JSON object mapping spreadsheet headers to inventory fields',
-    example: { Barcode: 'upc', Qty: 'quantity', 'Retail Price': 'price' },
+    example: {
+      UPC: 'upc',
+      Quantity: 'quantity',
+      Price: 'price',
+      'Price Per Box': 'pricePerBox',
+      Humidor: 'humidor',
+      Wall: 'wall',
+      Shelf: 'shelf',
+      'Shelf Row': 'shelfRow',
+      Column: 'column',
+    },
   })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => {
     if (typeof value !== 'string') return value;
+    if (!value.trim()) return undefined;
     try {
       return JSON.parse(value) as unknown;
     } catch {

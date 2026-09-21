@@ -4,9 +4,17 @@ All endpoints use `/api/v1`. Retailer write endpoints require a retailer access 
 
 ## Inventory flow
 
-1. `POST /inventory/bulk/preview`: multipart `file` and optional JSON `mapping` from column headers to field names. The first ten rows are returned in `preview`/`mappedPreview`; with mapping, **all** rows are returned in `mappedRows`. No database writes.
+1. `POST /inventory/bulk/preview`: multipart `file` and optional JSON `mapping` from column headers to field names. Canonical headers (`UPC`, `Quantity`, `Price`, `Price Per Box`, `Humidor`, `Wall`, `Shelf`, `Shelf Row`, `Column`) are mapped automatically when mapping is omitted. The first ten rows are returned in `preview`/`mappedPreview`; with automatic or explicit mapping, **all** rows are returned in `mappedRows`. Custom mappings must use actual uploaded headers: a `Barcode` mapping is invalid when the file contains `UPC`. No database writes.
 2. `POST /inventory/bulk/validate`: send `{ "rows": mappedRows }`. Returns `total`, `valid`, `invalid`, and `errors` with one-based row numbers. No database writes.
-3. `POST /inventory/bulk/import`: send the same rows. Validation runs again, valid rows are upserted, and invalid rows are skipped. Returns `total`, `imported`, `failed`, and `errors`. This is a partial import, not an all-or-nothing transaction.
+3. `POST /inventory/bulk/import`: upload multipart `file` (CSV/XLSX/XLS, up to 10 MB) with optional JSON `mapping`, or send the same JSON `{ "rows": mappedRows }`. Use one input method per request. Canonical file headers are mapped automatically. Validation runs again, valid rows are upserted, and invalid rows are skipped. Returns `total`, `imported`, `failed`, and `errors`. This is a partial import, not an all-or-nothing transaction.
+
+Direct CSV import (let curl set the multipart Content-Type boundary):
+
+```bash
+curl -X POST http://localhost:8080/api/v1/inventory/bulk/import \
+  -H 'Authorization: Bearer YOUR_RETAILER_TOKEN' \
+  -F 'file=@inventory.csv;type=text/csv'
+```
 
 Example body for validation and import:
 
@@ -27,7 +35,7 @@ Example body for validation and import:
 
 - Maximum 2,000 rows per batch and 2 MB JSON body. Preview uploads allow 10 MB.
 - UPC must be a string to preserve leading zeroes. Only existing active master cigars are used; imports never create master cigars.
-- Quantity must be a non-negative integer. Price and pricePerBox are required non-negative numbers. Plain decimal strings from CSV/Excel are accepted; remove currency symbols and thousands separators before submitting.
+- Quantity must be a non-negative integer. Price and pricePerBox are required non-negative numbers. Preview uses underlying numeric Excel values for stock, prices and positions, including currency-formatted cells; UPC stays text. Plain decimal strings from CSV/Excel are accepted; currency symbols and thousands separators in text cells must be removed before submitting.
 - Humidor, wall and shelf names must match existing names exactly after trimming. Ambiguous names or UPCs are rejected. Only the authenticated retailer's active humidors are used.
 - Wall locations need a shelf and a positive column within the wall bounds. Legacy shelf grids omit `wall` and require `row` and `column` within the grid. `shelfRow`/`shelfColumn` aliases are supported.
 - Existing inventory at the same cigar/location is updated, with quantity replaced, not added. Zero quantity sets `out_of_stock`. Another cigar in that cell or a repeated cell in the batch is rejected.
