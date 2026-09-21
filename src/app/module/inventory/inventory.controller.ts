@@ -68,8 +68,9 @@ export class InventoryController {
         mapping: {
           type: 'string',
           description:
-            'Optional JSON: spreadsheet header → inventory field. Required targets: upc, quantity, price. Optional: pricePerBox, humidor, wall, shelf, row, column, shelfRow, shelfColumn. Import requires pricePerBox and a complete location.',
-          example: '{"Barcode":"upc","Qty":"quantity","Retail Price":"price"}',
+            'Omit mapping for canonical template headers. For custom headers, use actual file headers. Optional JSON: spreadsheet header → inventory field. Required targets: upc, quantity, price. Optional: pricePerBox, humidor, wall, shelf, row, column, shelfRow, shelfColumn. Import requires pricePerBox and a complete location.',
+          example:
+            '{"UPC":"upc","Quantity":"quantity","Price":"price","Price Per Box":"pricePerBox","Humidor":"humidor","Wall":"wall","Shelf":"shelf","Shelf Row":"shelfRow","Column":"column"}',
         },
       },
     },
@@ -113,9 +114,37 @@ export class InventoryController {
   }
 
   @Post('bulk/import')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'CSV, XLSX or XLS file. Use file or JSON rows.',
+        },
+        mapping: {
+          type: 'string',
+          description:
+            'Optional JSON mapping for custom headers. Omit for the canonical template.',
+          example:
+            '{"UPC":"upc","Quantity":"quantity","Price":"price","Price Per Box":"pricePerBox","Humidor":"humidor","Wall":"wall","Shelf":"shelf","Column":"column"}',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      ...fileUpload.uploadConfig,
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   @ApiOperation({
     summary:
       'Revalidate and upsert valid rows; quantities replace existing stock',
+    description:
+      'Upload file with optional mapping. API clients may alternatively send application/json with { "rows": [...] } using mapped rows from preview.',
   })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('retailer'))
@@ -123,10 +152,15 @@ export class InventoryController {
   async importBulkInventory(
     @Req() req: Request,
     @Body() dto: BulkInventoryImportDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     return {
       message: 'Bulk inventory import completed',
-      data: await this.inventoryService.importBulkInventory(req.user!.id, dto),
+      data: await this.inventoryService.importBulkInventory(
+        req.user!.id,
+        dto,
+        file,
+      ),
     };
   }
 
