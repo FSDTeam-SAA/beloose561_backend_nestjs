@@ -46,7 +46,7 @@ export class ConsumerScanController {
   }
 
   @Get('upc/:code')
-  @ApiOperation({ summary: 'Look up a UPC with optional retailer context' })
+  @ApiOperation({ summary: 'Look up a UPC with optional retailer contexts' })
   async lookup(
     @Param('code') code: string,
     @Query() query: StoreContextDto,
