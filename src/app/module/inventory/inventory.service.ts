@@ -244,7 +244,7 @@ export class InventoryService {
         return NaN;
       return Number(value.trim());
     };
-    const [masters, humidors, existing] = await Promise.all([
+    const [masters, initialHumidors, existing] = await Promise.all([
       this.masterDatabaseModel
         .find({
           upcCodes: { $in: dto.rows.map((r) => text(r?.upc)).filter(Boolean) },
@@ -261,6 +261,110 @@ export class InventoryService {
         )
         .lean(),
     ]);
+
+    const humidors = [...initialHumidors];
+
+    // Auto-provision any missing humidors, walls, or shelves referenced in the uploaded batch
+    const neededHumidors = new Map<
+      string,
+      Map<string, { maxCol: number; shelves: Set<string> }>
+    >();
+    for (const row of dto.rows) {
+      const hName = text(row?.humidor);
+      const wName = text(row?.wall);
+      const sName = text(row?.shelf);
+      const col = number(row?.shelfColumn ?? row?.column) || 1;
+      if (hName) {
+        if (!neededHumidors.has(hName)) neededHumidors.set(hName, new Map());
+        if (wName) {
+          const walls = neededHumidors.get(hName)!;
+          if (!walls.has(wName))
+            walls.set(wName, { maxCol: 6, shelves: new Set() });
+          const wInfo = walls.get(wName)!;
+          wInfo.maxCol = Math.max(wInfo.maxCol, col);
+          if (sName) wInfo.shelves.add(sName);
+        }
+      }
+    }
+
+    for (const [hName, wallsMap] of neededHumidors.entries()) {
+      // eslint-disable-next-line prefer-const
+      let humidor = humidors.find(
+        (h) => h.name.toLowerCase() === hName.toLowerCase(),
+      );
+      if (!humidor) {
+        const wallsArray = Array.from(wallsMap.entries()).map(
+          ([wName, wInfo]) => ({
+            _id: new mongoose.Types.ObjectId(),
+            name: wName,
+            columns: Math.max(wInfo.maxCol, 6),
+            shelves: Array.from(wInfo.shelves).map((sName) => ({
+              _id: new mongoose.Types.ObjectId(),
+              name: sName,
+              cigarCount: 0,
+            })),
+          }),
+        );
+        const created = await this.humidorModel.create({
+          retailerId: retailer._id,
+          userId: user._id,
+          name: hName,
+          location: 'Main Store',
+          description: 'Auto-provisioned from inventory upload',
+          walls: wallsArray,
+          isActive: true,
+        });
+        humidors.push(created.toObject ? created.toObject() : created);
+      } else if (wallsMap.size > 0) {
+        let modified = false;
+        const currentWalls = (humidor.walls || []) as any[];
+        for (const [wName, wInfo] of wallsMap.entries()) {
+          let wall = currentWalls.find(
+            (w) => w.name.toLowerCase() === wName.toLowerCase(),
+          );
+          if (!wall) {
+            wall = {
+              _id: new mongoose.Types.ObjectId(),
+              name: wName,
+              columns: Math.max(wInfo.maxCol, 6),
+              shelves: Array.from(wInfo.shelves).map((sName) => ({
+                _id: new mongoose.Types.ObjectId(),
+                name: sName,
+                cigarCount: 0,
+              })),
+            };
+            currentWalls.push(wall);
+            modified = true;
+          } else {
+            if (wInfo.maxCol > wall.columns) {
+              wall.columns = wInfo.maxCol;
+              modified = true;
+            }
+            for (const sName of wInfo.shelves) {
+              if (
+                !wall.shelves?.some(
+                  (s: any) => s.name.toLowerCase() === sName.toLowerCase(),
+                )
+              ) {
+                wall.shelves = wall.shelves || [];
+                wall.shelves.push({
+                  _id: new mongoose.Types.ObjectId(),
+                  name: sName,
+                  cigarCount: 0,
+                });
+                modified = true;
+              }
+            }
+          }
+        }
+        if (modified) {
+          await this.humidorModel.findByIdAndUpdate(humidor._id, {
+            $set: { walls: currentWalls },
+          });
+        }
+      }
+    }
+
     const errors: { row: number; upc: string; reason: string }[] = [];
     const masterByUpc = new Map<string, typeof masters>();
     for (const master of masters) {
@@ -298,7 +402,9 @@ export class InventoryService {
           throw new Error('Price must be a non-negative number');
         if (!Number.isFinite(pricePerBox) || pricePerBox < 0)
           throw new Error('Price per box must be a non-negative number');
-        const rooms = humidors.filter((h) => h.name === text(input.humidor));
+        const rooms = humidors.filter(
+          (h) => h.name.toLowerCase() === text(input.humidor).toLowerCase(),
+        );
         if (rooms.length !== 1)
           throw new Error('Humidor not found or name is ambiguous');
         const humidor = rooms[0];
@@ -317,27 +423,33 @@ export class InventoryService {
         };
         if (text(input.wall)) {
           const walls =
-            humidor.walls?.filter((w) => w.name === text(input.wall)) ?? [];
+            humidor.walls?.filter(
+              (w) => w.name.toLowerCase() === text(input.wall).toLowerCase(),
+            ) ?? [];
           if (walls.length !== 1)
             throw new Error('Wall not found or name is ambiguous');
           const wall = walls[0];
-          const shelves = wall.shelves.filter(
-            (sh) => sh.name === text(input.shelf),
-          );
+          const shelves =
+            wall.shelves?.filter(
+              (sh) => sh.name.toLowerCase() === text(input.shelf).toLowerCase(),
+            ) ?? [];
           if (shelves.length !== 1)
             throw new Error('Shelf not found in wall or name is ambiguous');
           if (column > wall.columns)
             throw new Error('Column exceeds wall columns');
+          const row = number(input.shelfRow ?? input.row);
           Object.assign(location, {
             wallId: wall._id,
             wallName: wall.name,
             shelfId: shelves[0]._id,
             shelfName: shelves[0].name,
+            ...(Number.isSafeInteger(row) && row >= 1 ? { shelfRow: row } : {}),
           });
         } else {
           const shelves =
-            humidor.shelfes?.filter((sh) => sh.name === text(input.shelf)) ??
-            [];
+            humidor.shelfes?.filter(
+              (sh) => sh.name.toLowerCase() === text(input.shelf).toLowerCase(),
+            ) ?? [];
           if (shelves.length !== 1)
             throw new Error('Choose a valid wall and shelf, or a legacy shelf');
           const row = number(input.shelfRow ?? input.row);
@@ -363,7 +475,11 @@ export class InventoryService {
           humidorId: humidor._id,
           shelfColumn: column,
           ...(location.wallId
-            ? { wallId: location.wallId, shelfId: location.shelfId }
+            ? {
+                wallId: location.wallId,
+                shelfId: location.shelfId,
+                ...(location.shelfRow ? { shelfRow: location.shelfRow } : {}),
+              }
             : {
                 wallId: null,
                 shelfName: location.shelfName,
@@ -385,7 +501,10 @@ export class InventoryService {
             item.shelfColumn === column &&
             (location.wallId
               ? String(item.wallId) === String(location.wallId) &&
-                String(item.shelfId) === String(location.shelfId)
+                String(item.shelfId) === String(location.shelfId) &&
+                (!location.shelfRow ||
+                  !item.shelfRow ||
+                  item.shelfRow === location.shelfRow)
               : !item.wallId &&
                 item.shelfName === location.shelfName &&
                 item.shelfRow === location.shelfRow),
@@ -441,7 +560,17 @@ export class InventoryService {
       userId,
       dto,
     );
-    return { total, valid: prepared.length, invalid: errors.length, errors };
+    return {
+      total,
+      valid: prepared.length,
+      invalid: errors.length,
+      validCount: prepared.length,
+      invalidCount: errors.length,
+      errors: errors.map((err) => ({
+        ...err,
+        message: err.reason,
+      })),
+    };
   }
 
   async importBulkInventory(
@@ -511,9 +640,17 @@ export class InventoryService {
     }
     return {
       total,
+      totalRows: total,
       imported,
+      importedCount: imported,
       failed: errors.length,
-      errors: errors.sort((a, b) => a.row - b.row),
+      skippedCount: errors.length,
+      errors: errors
+        .sort((a, b) => a.row - b.row)
+        .map((err) => ({
+          ...err,
+          message: err.reason,
+        })),
     };
   }
 
@@ -880,7 +1017,9 @@ export class InventoryService {
       .find(whereConditions)
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .populate('humidorId')
+      .populate('masterCigarId');
     const total =
       await this.inventoryRepository.countDocuments(whereConditions);
     return {
