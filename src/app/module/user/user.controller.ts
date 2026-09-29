@@ -218,6 +218,7 @@ export class UserController {
       'fullName',
       'email',
       'status',
+      'role',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.userService.getAllUser(params, options);

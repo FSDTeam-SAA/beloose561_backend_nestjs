@@ -604,6 +604,15 @@ export class DashboardService {
       verfied: 'verified',
     });
 
+    const totalCustomers = await this.userModel.countDocuments({
+      role: 'customer',
+    });
+
+    const activeCustomers = await this.userModel.countDocuments({
+      role: 'customer',
+      status: 'active',
+    });
+
     const pendingProduct = await this.inventoryModel.countDocuments({
       status: 'under_review',
     });
@@ -627,6 +636,8 @@ export class DashboardService {
     return {
       totalRetelier,
       totalVerifiRetelier,
+      totalCustomers,
+      activeCustomers,
       pendingProduct,
       totalMasterDatabase,
       totalEarnings:

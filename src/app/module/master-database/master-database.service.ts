@@ -122,7 +122,6 @@ export class MasterDatabaseService {
     const wanted = aliases.map((a) => this.normalizeKey(a));
     for (const [rowKey, value] of Object.entries(row)) {
       if (wanted.includes(this.normalizeKey(rowKey))) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return String(value ?? '').trim();
       }
     }
@@ -208,16 +207,28 @@ export class MasterDatabaseService {
 
   async getAllMasterDatabase(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const { upc, upcCode, ...restParams } = params as any;
+    const upcFilter = upc || upcCode;
+    const extraConditions: Record<string, unknown> = {};
+    if (upcFilter) {
+      extraConditions.upcCodes = upcFilter;
+    }
 
-    const whereConditions = buildWhereConditions(params, [
-      'productLine',
-      'brand',
-      'strength',
-      'wrapper',
-      'estimatedSmokingTime',
-      'pairingSuggestions',
-      'status',
-    ]);
+    const whereConditions = buildWhereConditions(
+      restParams,
+      [
+        'productLine',
+        'brand',
+        'name',
+        'strength',
+        'wrapper',
+        'estimatedSmokingTime',
+        'pairingSuggestions',
+        'status',
+        'upcCodes',
+      ],
+      extraConditions,
+    );
 
     const result = await this.masterBatabaseModel
       .find(whereConditions)

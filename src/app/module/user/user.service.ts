@@ -8,6 +8,7 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './entities/user.entity';
+import { ConsumerProfile } from '../consumer-profile/entities/consumer-profile.entity';
 
 const userSearchAbleFields = [
   'fullName',
@@ -25,6 +26,8 @@ const userSearchAbleFields = [
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(ConsumerProfile.name)
+    private readonly consumerProfileModel: Model<ConsumerProfile>,
   ) {}
 
   async createUser(createUserDto: CreateUserDto, file?: Express.Multer.File) {
@@ -66,7 +69,14 @@ export class UserService {
     if (!user) {
       throw new HttpException('User not found', 404);
     }
-    return user;
+    const userObj = user.toObject() as Record<string, any>;
+    if (user.role === 'customer') {
+      const consumerProfile = await this.consumerProfileModel.findOne({
+        userId: user._id,
+      });
+      userObj.consumerProfile = consumerProfile;
+    }
+    return userObj;
   }
 
   async updateUser(

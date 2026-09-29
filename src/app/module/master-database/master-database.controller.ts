@@ -112,6 +112,8 @@ export class MasterDatabaseController {
       'status',
       'suggestedRetailPriceEach',
       'estimatedSmokingBox',
+      'upc',
+      'upcCode',
     ]);
     const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.masterDatabaseService.getAllMasterDatabase(
