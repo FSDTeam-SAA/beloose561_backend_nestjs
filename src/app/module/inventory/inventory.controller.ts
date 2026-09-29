@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
   Body,
   Controller,
@@ -605,6 +606,87 @@ export class InventoryController {
       message: 'Inventory retrieved successfully',
       meta: result.meta,
       data: result.data,
+    };
+  }
+
+  @Get(':slug/guided-discovery')
+  @ApiOperation({
+    summary:
+      'Customer App - Guided Discovery recommendations by store slug (public GET)',
+  })
+  @ApiQuery({ name: 'strength', type: 'string', required: false })
+  @ApiQuery({ name: 'minBudget', type: 'number', required: false })
+  @ApiQuery({ name: 'maxBudget', type: 'number', required: false })
+  @ApiQuery({ name: 'smokingTime', type: 'string', required: false })
+  @ApiQuery({ name: 'wrapper', type: 'string', required: false })
+  @ApiQuery({ name: 'pairingSuggestions', type: 'string', required: false })
+  @ApiQuery({ name: 'profile', type: 'string', required: false })
+  @ApiQuery({ name: 'limit', type: 'number', required: false })
+  @HttpCode(HttpStatus.OK)
+  async guidedDiscoveryByStoreGet(
+    @Param('slug') slug: string,
+    @Req() req: Request,
+  ) {
+    const query = (req.query || {}) as Record<string, any>;
+    const dto: GuidedDiscoveryDto = {
+      strength: query.strength,
+      minBudget:
+        query.minBudget !== undefined && query.minBudget !== ''
+          ? Number(query.minBudget)
+          : undefined,
+      maxBudget:
+        query.maxBudget !== undefined && query.maxBudget !== ''
+          ? Number(query.maxBudget)
+          : undefined,
+      smokingTime: query.smokingTime,
+      wrapperPreference: query.wrapper || query.wrapperPreference,
+      pairingSuggestions: query.pairingSuggestions,
+      preference: (query.profile || query.preference) as any,
+      limit:
+        query.limit !== undefined && query.limit !== ''
+          ? Number(query.limit)
+          : 6,
+    };
+
+    const result = await this.inventoryService.guidedDiscoverySearchByStore(
+      slug,
+      dto,
+    );
+
+    return {
+      message: 'Guided discovery recommendations retrieved successfully',
+      data: result,
+      meta: {
+        page: 1,
+        limit: dto.limit ?? 6,
+        total: result.length,
+      },
+    };
+  }
+
+  @Post(':slug/guided-discovery')
+  @ApiOperation({
+    summary:
+      'Customer App - Guided Discovery recommendations by store slug (public POST)',
+  })
+  @HttpCode(HttpStatus.OK)
+  async guidedDiscoveryByStorePost(
+    @Param('slug') slug: string,
+    @Body() dto: GuidedDiscoveryDto,
+  ) {
+    const result = await this.inventoryService.guidedDiscoverySearchByStore(
+      slug,
+      dto,
+    );
+
+    return {
+      message: 'Guided discovery recommendations retrieved successfully',
+      data: result,
+      meta: {
+        page: 1,
+        limit: dto?.limit ?? 6,
+        total: result.length,
+      },
     };
   }
 

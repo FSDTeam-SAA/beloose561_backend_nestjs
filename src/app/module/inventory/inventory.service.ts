@@ -2171,9 +2171,15 @@ export class InventoryService {
       full: 5,
     };
 
-    if (dto.strength && item.strength) {
+    const actualStrength = (
+      item.strength ||
+      item.masterCigarId?.strength ||
+      ''
+    ).toLowerCase();
+
+    if (dto.strength && actualStrength) {
       const wanted = strengthScale[dto.strength];
-      const actual = strengthScale[String(item.strength).toLowerCase()];
+      const actual = strengthScale[actualStrength];
       if (wanted !== undefined && actual !== undefined) {
         const distance = Math.abs(wanted - actual);
         if (distance === 0) {
@@ -2182,7 +2188,7 @@ export class InventoryService {
         } else if (distance === 1) {
           score += 20;
           reasons.push(
-            `close to your ${dto.strength} strength preference (${item.strength})`,
+            `close to your ${dto.strength} strength preference (${item.strength || item.masterCigarId?.strength})`,
           );
         }
       }
@@ -2196,9 +2202,9 @@ export class InventoryService {
       if (withinBudget) {
         score += 30;
         reasons.push('within your budget');
-      } else if (dto.maxBudget !== undefined && price <= dto.maxBudget * 1.2) {
+      } else if (dto.maxBudget !== undefined && price <= dto.maxBudget * 1.25) {
         score += 15;
-        reasons.push('slightly over budget but close');
+        reasons.push('slightly over budget but an exceptional value');
       }
     }
 
@@ -2225,24 +2231,47 @@ export class InventoryService {
           dto.smokingTime === '120+' ? 120 : Number(dto.smokingTime);
         const distance = Math.abs(actualMinutes - wantedMinutes);
         if (distance <= 15) {
-          score += 10;
-          reasons.push('fits the smoking time you asked for');
-        } else if (distance <= 30) {
-          score += 5;
+          score += 15;
+          reasons.push('fits your desired session length');
+        } else if (distance <= 35) {
+          score += 8;
         }
+      }
+    }
+
+    if (dto.pairingSuggestions) {
+      const pairings = [
+        ...(Array.isArray(item.pairingSuggestions)
+          ? item.pairingSuggestions
+          : [item.pairingSuggestions]),
+        ...(Array.isArray(item.masterCigarId?.pairingSuggestions)
+          ? item.masterCigarId.pairingSuggestions
+          : [item.masterCigarId?.pairingSuggestions]),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      if (pairings.includes(dto.pairingSuggestions.toLowerCase())) {
+        score += 20;
+        reasons.push(`pairs naturally with ${dto.pairingSuggestions}`);
       }
     }
 
     if (dto.preference === NewOrFamiliarPreference.FAMILIAR) {
       if (item.isStaffPick || (item.totalSearches ?? 0) > 0) {
-        score += 10;
-        reasons.push('a popular pick other customers already love');
+        score += 12;
+        reasons.push('a trusted classic loved by seasoned smokers');
       }
     } else if (dto.preference === NewOrFamiliarPreference.NEW) {
       if (item.isNewArrival) {
-        score += 10;
-        reasons.push('newly arrived - something different to try');
+        score += 12;
+        reasons.push('newly arrived - an exciting profile to explore');
       }
+    }
+
+    if (item.isStaffPick) {
+      score += 5;
     }
 
     return { score, reasons };
@@ -2261,7 +2290,10 @@ export class InventoryService {
         quantity: { $gt: 0 },
       })
       .populate('humidorId', 'name')
-      .populate('masterCigarId', 'wrapper estimatedSmokingTime flavorNotes')
+      .populate(
+        'masterCigarId',
+        'wrapper estimatedSmokingTime flavorNotes pairingSuggestions strength',
+      )
       .lean();
 
     const ranked = candidates
@@ -2269,17 +2301,93 @@ export class InventoryService {
       .sort((a, b) => b.score - a.score)
       .slice(0, dto.limit ?? 5);
 
-    const labels = ['Best Match', 'Great Choice', 'Alternative Option'];
+    const labels = [
+      'Top Match',
+      'Great Choice',
+      'Alternative Option',
+      'Curated Selection',
+      'Recommended',
+    ];
 
-    return ranked.map(({ item, reasons }, index) => ({
+    return ranked.map(({ item, reasons, score }, index) => ({
       rank: index + 1,
-      label: labels[index] ?? 'Alternative Option',
+      label: labels[index] ?? 'Curated Selection',
+      matchScore: Math.min(99, Math.max(75, 70 + Math.round(score * 0.35))),
       ...this.formatForStaffSearch(item),
       matchReason:
         reasons.length > 0
-          ? `Recommended because it's ${reasons.join(' and ')}`
-          : 'A solid option from current inventory',
+          ? `Recommended because it ${reasons.join(' and ')}`
+          : 'A solid, premium option from current inventory',
     }));
+  }
+
+  async guidedDiscoverySearchByStore(
+    storeSlug: string,
+    dto: GuidedDiscoveryDto,
+  ) {
+    const retailer = await this.retailerModel.findOne({ storeSlug });
+    if (!retailer) throw new HttpException('Retailer not found', 404);
+
+    const candidates = await this.inventoryRepository
+      .find({
+        retailerId: retailer._id,
+        status: 'active',
+        quantity: { $gt: 0 },
+      })
+      .populate('humidorId', 'name')
+      .populate(
+        'masterCigarId',
+        'wrapper estimatedSmokingTime flavorNotes pairingSuggestions strength',
+      )
+      .lean();
+
+    if (!candidates.length) {
+      return [];
+    }
+
+    const scored = candidates.map((item) => ({
+      item,
+      ...this.scoreGuidedMatch(item, dto),
+    }));
+
+    // Sort by highest score first; if tied, prioritize staff picks then popularity
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.item.isStaffPick && !a.item.isStaffPick) return 1;
+      if (!b.item.isStaffPick && a.item.isStaffPick) return -1;
+      return (b.item.totalSearches || 0) - (a.item.totalSearches || 0);
+    });
+
+    const limit = dto.limit ?? 6;
+    const ranked = scored.slice(0, limit);
+
+    const labels = [
+      'Top Match',
+      'Great Choice',
+      'Alternative Option',
+      'Curated Selection',
+      'Recommended',
+      'Featured Discovery',
+    ];
+
+    return ranked.map(({ item, reasons, score }, index) => {
+      const formatted = this.formatForStaffSearch(item);
+      const computedScore =
+        score > 0
+          ? Math.min(99, Math.max(78, 70 + Math.round(score * 0.35)))
+          : 85 - index * 2;
+
+      return {
+        rank: index + 1,
+        label: labels[index] ?? 'Curated Selection',
+        matchScore: computedScore,
+        ...formatted,
+        matchReason:
+          reasons.length > 0
+            ? `Recommended because it ${reasons.join(' and ')}`
+            : 'A well-balanced cigar hand-selected from our humidor inventory',
+      };
+    });
   }
 
   async getCustomerViewDetail(userId: string, id: string) {

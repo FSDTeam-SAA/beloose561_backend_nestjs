@@ -65,6 +65,11 @@ export class GuidedDiscoveryDto {
   @IsEnum(NewOrFamiliarPreference)
   preference?: NewOrFamiliarPreference;
 
+  @ApiPropertyOptional({ example: 'Coffee' })
+  @IsOptional()
+  @IsString()
+  pairingSuggestions?: string;
+
   @ApiPropertyOptional({ example: 5, default: 5 })
   @IsOptional()
   @Type(() => Number)
