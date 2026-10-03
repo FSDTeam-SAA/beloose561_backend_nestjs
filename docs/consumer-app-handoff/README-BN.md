@@ -13,6 +13,9 @@
 - `flutter/consumer_api.dart`, `consumer_endpoints.dart`: Dio client, envelope/meta parsing, ID helpers, complete endpoint registry।
 - `flutter/INTEGRATION-EXAMPLES.md`: login/list/detail/store/related/favorite/scan/avatar call examples এবং controller guidance।
 - `BACKEND-GAPS.md`: backend developer-এর remaining কাজ; missing routes collection-এ existing হিসেবে রাখা হয়নি।
+- `ERRORS-AND-EMPTY-STATES.md`: null profile, empty list, unknown availability, out-of-stock ও error UI rules।
+
+মোট ৫০টি request template: ৪৮টি current source-backed operation/variant, ২টি ZIP-only guided GET/POST। এগুলো ৫০টি আলাদা নতুন endpoint নয়; search/filter/list variants-ও আছে।
 
 ## Postman setup
 
@@ -78,3 +81,5 @@ Staff Picks current APIs are per store, so global home must select/show store co
 Catalog, scan, recommendation: supplied backend ZIP matches current inspected sources. ZIP inventory controller includes public GET/POST guided-discovery missing in current workspace. Website fallback generates its own guided score when route fails; personal recommendation and guided ranking are different systems. Neither score is measured confidence.
 
 Docs-only handoff: backend business code and extracted Flutter project unchanged. See BACKEND-GAPS before scheduling final integration delivery.
+
+Generated JSON/Postman examples, unique request keys, environment variables, response envelope/list shapes এবং ৫০টি route/source matching check passed। Live server এবং Dart compiler/device verification হয়নি। `generate.cjs` artifacts regenerate করে; `verify.cjs` artifact consistency/source route checks করে, network call নয়।
