@@ -9,6 +9,7 @@ import { ConsumerScanService } from '../consumer-scan/consumer-scan.service';
 import { CatalogQueryDto } from '../consumer-catalog/dto/catalog-query.dto';
 import { MasterDatabase } from '../master-database/entities/master-database.entity';
 import { RecommendationQueryDto } from './dto/recommendation-query.dto';
+import { NearbyRecommendationQueryDto } from './dto/nearby-recommendation-query.dto';
 import { BehaviorPreferences, scoreCigar } from './recommendation-score';
 import { Journal } from '../journal/entities/journal.entity';
 import { getJournalPreferences } from './journal-preferences';
@@ -68,6 +69,46 @@ export class RecommendationService {
         store,
       });
     }
+    return {
+      data,
+      meta: { onboardingCompleted: profile?.onboardingCompleted ?? false },
+    };
+  }
+
+  async getNearbyRecommendations(
+    userId: string,
+    query: NearbyRecommendationQueryDto,
+  ) {
+    const profile = await this.profileService.getMyProfile(userId);
+    const behavior = await this.getBehaviorPreferences(userId);
+    const { cigars, stores } =
+      await this.catalogService.getNearbyCandidates(query);
+
+    const ranked = cigars.map((cigar) => {
+      const selection = stores.get(String(cigar._id))!;
+      return {
+        cigar,
+        selection,
+        ...scoreCigar(cigar, profile ?? {}, selection.store.price, behavior),
+      };
+    });
+    ranked.sort(
+      (a, b) =>
+        b.matchScore - a.matchScore ||
+        String(a.cigar._id).localeCompare(String(b.cigar._id)),
+    );
+
+    const data = ranked.slice(0, query.limit).map((item) => ({
+      ...this.scanService.getCigarDetails(item.cigar),
+      cigarId: String(item.cigar._id),
+      matchScore: item.matchScore,
+      matchReasons: item.matchReasons,
+      available: true,
+      price: item.selection.store.price,
+      quantity: item.selection.store.quantity,
+      location: item.selection.location,
+      store: item.selection.store,
+    }));
     return {
       data,
       meta: { onboardingCompleted: profile?.onboardingCompleted ?? false },

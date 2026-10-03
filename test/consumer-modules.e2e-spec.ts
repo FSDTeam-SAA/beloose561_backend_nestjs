@@ -49,8 +49,11 @@ it('wires consumer modules and exposes the demo routes in Swagger without a live
       '/qrcodes/resolve-store',
       '/consumer-profile/onboarding',
       '/consumer-cigars/{cigarId}/rating',
+      '/consumer/cigars/nearby',
       '/consumer/cigars/{cigarId}',
+      '/consumer/cigars/{cigarId}/nearby-stock',
       '/recommendations/me',
+      '/recommendations/nearby',
       '/journal',
       '/journal/{id}',
     ]) {

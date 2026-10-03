@@ -6,6 +6,10 @@ import { CigarIdDto } from '../consumer-cigar/dto/consumer-cigar.dto';
 import { StoreContextDto } from '../consumer-scan/dto/scan-upc.dto';
 import { ConsumerCatalogService } from './consumer-catalog.service';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
+import {
+  NearbyCatalogQueryDto,
+  NearbyStockQueryDto,
+} from './dto/nearby-catalog-query.dto';
 
 @ApiTags('consumer-catalog')
 @UseGuards(OptionalConsumerAuthGuard)
@@ -18,6 +22,25 @@ export class ConsumerCatalogController {
     const userId = req.user?.role === 'customer' ? req.user.id : undefined;
     const result = await this.catalogService.discover(query, userId);
     return { message: 'Cigars retrieved successfully', ...result };
+  }
+
+  @Get('nearby')
+  async discoverNearby(
+    @Query() query: NearbyCatalogQueryDto,
+    @Req() req: Request,
+  ) {
+    const userId = req.user?.role === 'customer' ? req.user.id : undefined;
+    const result = await this.catalogService.discoverNearby(query, userId);
+    return { message: 'Nearby cigars retrieved successfully', ...result };
+  }
+
+  @Get(':cigarId/nearby-stock')
+  async getNearbyStock(
+    @Param('cigarId') cigarId: string,
+    @Query() query: NearbyStockQueryDto,
+  ) {
+    const result = await this.catalogService.getNearbyStock(cigarId, query);
+    return { message: 'Nearby cigar stock retrieved successfully', ...result };
   }
 
   @Get(':cigarId')
