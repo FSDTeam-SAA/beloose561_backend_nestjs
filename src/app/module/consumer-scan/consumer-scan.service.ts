@@ -58,6 +58,7 @@ export class ConsumerScanService {
       pairingSuggestions: master.pairingSuggestions,
       suggestedRetailPriceEach: master.suggestedRetailPriceEach,
       suggestedRetailPricePerBox: master.suggestedRetailPricePerBox,
+      available: master.available ?? true,
     };
   }
 

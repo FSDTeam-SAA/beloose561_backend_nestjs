@@ -1013,13 +1013,17 @@ export class InventoryService {
           : {}),
       },
     );
-    const result = await this.inventoryRepository
+    const inventory = await this.inventoryRepository
       .find(whereConditions)
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
       .populate('humidorId')
       .populate('masterCigarId');
+    const result = inventory.map((item) => ({
+      ...item.toObject(),
+      available: item.status === 'active' && item.quantity > 0,
+    }));
     const total =
       await this.inventoryRepository.countDocuments(whereConditions);
     return {

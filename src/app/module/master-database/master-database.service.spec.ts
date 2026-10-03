@@ -85,6 +85,7 @@ describe('Admin master upload', () => {
       whyYoullLikeThis: 'Rich flavor',
       suggestedRetailPriceEach: 23,
       suggestedRetailPricePerBox: 230,
+      available: true,
       status: 'inactive',
     });
     for (const key of Object.keys(entry))

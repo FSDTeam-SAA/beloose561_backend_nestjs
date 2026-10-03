@@ -80,6 +80,11 @@ export class MasterDatabase {
   @Prop()
   suggestedRetailPricePerBox?: number;
 
+  // Catalog-level availability. Retailer-scoped requests still use live
+  // inventory, which takes precedence over this value.
+  @Prop({ type: Boolean, default: true })
+  available!: boolean;
+
   @Prop({
     enum: ['active', 'under_review', 'out_of_stock', 'inactive'],
     default: 'active',

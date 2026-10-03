@@ -35,7 +35,10 @@ export class ConsumerCigarService {
       .sort({ updatedAt: -1 })
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
-      .populate('cigarId', 'brand productLine name image strength wrapper')
+      .populate(
+        'cigarId',
+        'brand productLine name image strength wrapper available',
+      )
       .lean();
     const total = await this.userCigarModel.countDocuments(filter);
     return { data, meta: { page: query.page, limit: query.limit, total } };

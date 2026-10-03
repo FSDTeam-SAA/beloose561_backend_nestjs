@@ -61,7 +61,7 @@ export class RecommendationService {
         cigarId,
         matchScore: item.matchScore,
         matchReasons: item.matchReasons,
-        available: store?.available ?? null,
+        available: store?.available ?? item.cigar.available ?? true,
         price: store?.price ?? item.cigar.suggestedRetailPriceEach ?? null,
         quantity: store?.quantity ?? null,
         location: store?.location ?? null,

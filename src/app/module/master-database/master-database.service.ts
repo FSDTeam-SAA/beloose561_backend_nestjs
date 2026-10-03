@@ -136,6 +136,20 @@ export class MasterDatabaseService {
     return Number.isFinite(value) ? value : undefined;
   }
 
+  private parseBoolean(raw: string): boolean | undefined {
+    if (!raw) return undefined;
+    const normalized = raw.trim().toLowerCase();
+    if (['true', 'yes', '1', 'in stock', 'available'].includes(normalized)) {
+      return true;
+    }
+    if (
+      ['false', 'no', '0', 'out of stock', 'unavailable'].includes(normalized)
+    ) {
+      return false;
+    }
+    return undefined;
+  }
+
   private toMasterDatabaseEntry(row: Record<string, unknown>) {
     const productLine = this.getValue(row, 'productLine', 'product line');
     const brand = this.getValue(row, 'brand');
@@ -201,6 +215,8 @@ export class MasterDatabaseService {
       pairingSuggestions: list('pairingSuggestions'),
       suggestedRetailPriceEach: this.parsePrice(eachRaw),
       suggestedRetailPricePerBox: this.parsePrice(boxRaw),
+      available:
+        this.parseBoolean(this.getValue(row, 'available', 'inStock')) ?? true,
       status,
     };
   }

@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsInt,
   IsEnum,
   IsNotEmpty,
@@ -61,6 +62,11 @@ export class CreateMasterDatabaseDto {
   @IsNumber()
   @Min(0)
   suggestedRetailPricePerBox?: number;
+
+  @ApiPropertyOptional({ example: true, default: true })
+  @IsOptional()
+  @IsBoolean()
+  available?: boolean;
 
   @ApiPropertyOptional({
     enum: MasterDatabaseStatus,

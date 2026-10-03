@@ -130,7 +130,7 @@ export class ConsumerCatalogService {
       return {
         ...this.scanService.getCigarDetails(cigar),
         price: stock?.price ?? cigar.suggestedRetailPriceEach ?? null,
-        available: query.retailerId ? true : null,
+        available: query.retailerId ? true : (cigar.available ?? true),
       };
     });
     if (userId)
