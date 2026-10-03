@@ -105,7 +105,7 @@ Flutter endpoint-এর সঙ্গে `/api/v1` দ্বিগুণ যো�
 
 Catalog filters: `search, brand, strength, wrapper, origin, flavor, size, minPrice, maxPrice, smokingTime, retailerId, page, limit`. Limit default 20, max 100. Recommendations limit default 20, max 100; no catalog-style pagination in recommendation result.
 
-ZIP-only guided route: `GET /inventory/{slug}/guided-discovery?strength=medium&minBudget=10&maxBudget=20&smokingTime=45&limit=6`; optional `wrapper`, `pairingSuggestions`, `profile`. ZIP also has POST form. This ranks store inventory using answers, not saved personal recommendation state. Before integrating into current workspace/deployment, reconcile the ZIP implementation. Do not claim website guided ranking and `/recommendations/me` produce identical order.
+ZIP-only guided route: `GET /inventory/{slug}/guided-discovery?strength=medium&minBudget=10&maxBudget=20&smokingTime=60&limit=6`; optional `wrapper`, `pairingSuggestions`, `profile`. ZIP also has POST form. Guided smokingTime options: `30`, `60`, `90`, `120+`; these differ from free catalog smokingTime filters. This ranks store inventory using answers, not saved personal recommendation state. Before integrating into current workspace/deployment, reconcile the ZIP implementation. Do not claim website guided ranking and `/recommendations/me` produce identical order.
 
 ## 5. Product detail parsing
 
