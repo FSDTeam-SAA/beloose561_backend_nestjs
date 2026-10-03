@@ -1,0 +1,61 @@
+// Generated from audited source. ZIP-only endpoints require deployment verification.
+class ConsumerEndpoint {
+  final String method;
+  final String route;
+  final bool requiresCustomer;
+  final bool zipOnly;
+  const ConsumerEndpoint(this.method, this.route, this.requiresCustomer, this.zipOnly);
+}
+
+const consumerEndpoints = <String, ConsumerEndpoint>{
+  'customerRegister': ConsumerEndpoint('POST', '/auth/customer-register', false, false),
+  'login': ConsumerEndpoint('POST', '/auth/login', false, false),
+  'forgotPassword': ConsumerEndpoint('POST', '/auth/forgot-password', false, false),
+  'verifyResetOtp': ConsumerEndpoint('POST', '/auth/verify', false, false),
+  'resetPassword': ConsumerEndpoint('POST', '/auth/reset-password', false, false),
+  'changePassword': ConsumerEndpoint('POST', '/auth/change-password', true, false),
+  'getTasteProfile': ConsumerEndpoint('GET', '/consumer-profile/me', true, false),
+  'completeOnboarding': ConsumerEndpoint('POST', '/consumer-profile/onboarding', true, false),
+  'updateTasteProfile': ConsumerEndpoint('PATCH', '/consumer-profile/me', true, false),
+  'catalog': ConsumerEndpoint('GET', '/consumer/cigars?page=1&limit=20', false, false),
+  'catalogSearch': ConsumerEndpoint('GET', '/consumer/cigars?search=Romeo&strength=medium&page=1&limit=20', false, false),
+  'storeCatalog': ConsumerEndpoint('GET', '/consumer/cigars?retailerId={{retailerId}}&page=1&limit=20', false, false),
+  'masterDetail': ConsumerEndpoint('GET', '/consumer/cigars/{{masterCigarId}}', false, false),
+  'masterStoreDetail': ConsumerEndpoint('GET', '/consumer/cigars/{{masterCigarId}}?retailerId={{retailerId}}', false, false),
+  'recommendGlobal': ConsumerEndpoint('GET', '/recommendations/me?limit=20', true, false),
+  'recommendStore': ConsumerEndpoint('GET', '/recommendations/me?retailerId={{retailerId}}&limit=20', true, false),
+  'nearbyShops': ConsumerEndpoint('GET', '/retailer/nearby?lat={{lat}}&lng={{lng}}&radius=5000&page=1&limit=20', false, false),
+  'shopBySlug': ConsumerEndpoint('GET', '/retailer/slug/{{storeSlug}}', false, false),
+  'shopById': ConsumerEndpoint('GET', '/retailer/{{retailerId}}', false, false),
+  'storeInventory': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/inventory-list?page=1&limit=20', false, false),
+  'storeInventorySearch': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/inventory-list?searchTerm=Romeo&minPrice=10&maxPrice=20&page=1&limit=20', false, false),
+  'staffPicks': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/staff-picks', false, false),
+  'newArrivals': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/new-arrivals', false, false),
+  'dailyFeatured': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/daily-featured', false, false),
+  'inventoryDetail': ConsumerEndpoint('GET', '/inventory/{{inventoryId}}', false, false),
+  'related': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/{{inventoryId}}/related', false, false),
+  'exclusive': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/{{inventoryId}}/exclusive-picks', false, false),
+  'surprise': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/surprise-me?exclude={{excludeInventoryIds}}', false, false),
+  'resolveStoreQr': ConsumerEndpoint('POST', '/qrcodes/resolve-store', false, false),
+  'scanUpc': ConsumerEndpoint('POST', '/consumer/scans/upc', false, false),
+  'lookupUpc': ConsumerEndpoint('GET', '/consumer/scans/upc/{{upc}}?retailerId={{retailerId}}', false, false),
+  'myCigars': ConsumerEndpoint('GET', '/consumer-cigars?type=favorites&page=1&limit=20', true, false),
+  'myWantToTry': ConsumerEndpoint('GET', '/consumer-cigars?type=want-to-try&page=1&limit=20', true, false),
+  'mySmoked': ConsumerEndpoint('GET', '/consumer-cigars?type=smoked&page=1&limit=20', true, false),
+  'myAllCigars': ConsumerEndpoint('GET', '/consumer-cigars?page=1&limit=20', true, false),
+  'favorite': ConsumerEndpoint('POST', '/consumer-cigars/{{masterCigarId}}/favorite', true, false),
+  'unfavorite': ConsumerEndpoint('DELETE', '/consumer-cigars/{{masterCigarId}}/favorite', true, false),
+  'wantToTry': ConsumerEndpoint('POST', '/consumer-cigars/{{masterCigarId}}/want-to-try', true, false),
+  'removeWantToTry': ConsumerEndpoint('DELETE', '/consumer-cigars/{{masterCigarId}}/want-to-try', true, false),
+  'markSmoked': ConsumerEndpoint('POST', '/consumer-cigars/{{masterCigarId}}/smoked', true, false),
+  'rateCigar': ConsumerEndpoint('POST', '/consumer-cigars/{{masterCigarId}}/rating', true, false),
+  'createJournal': ConsumerEndpoint('POST', '/journal', true, false),
+  'journalList': ConsumerEndpoint('GET', '/journal?page=1&limit=20', true, false),
+  'journalDetail': ConsumerEndpoint('GET', '/journal/{{journalId}}', true, false),
+  'updateJournal': ConsumerEndpoint('PATCH', '/journal/{{journalId}}', true, false),
+  'deleteJournal': ConsumerEndpoint('DELETE', '/journal/{{journalId}}', true, false),
+  'accountProfile': ConsumerEndpoint('GET', '/user/profile', true, false),
+  'updateAccountProfile': ConsumerEndpoint('PUT', '/user/profile', true, false),
+  'guidedStoreGet': ConsumerEndpoint('GET', '/inventory/{{storeSlug}}/guided-discovery?strength=medium&minBudget=10&maxBudget=20&smokingTime=60&wrapper=Indonesian&pairingSuggestions=Coffee&profile=familiar&limit=6', false, true),
+  'guidedStorePost': ConsumerEndpoint('POST', '/inventory/{{storeSlug}}/guided-discovery', false, true),
+};

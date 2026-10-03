@@ -1,0 +1,3130 @@
+{
+  "info": {
+    "name": "Humidor411 Consumer App — source-derived handoff",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Audited source, not live production capture. Examples show relevant fields, extra fields omitted; example records and scores are illustrative. Import environment, fill blanks. Requests mutate real data when explicitly sent. Run individual requests; do not Run All on production. ZIP-only folder deployment unverified. Missing APIs are documented only, not runnable."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.humidor411.com/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "email",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "newPassword",
+      "value": ""
+    },
+    {
+      "key": "fullName",
+      "value": ""
+    },
+    {
+      "key": "otp",
+      "value": ""
+    },
+    {
+      "key": "masterCigarId",
+      "value": "6abb8af3ca05a7b9788d0f0e"
+    },
+    {
+      "key": "inventoryId",
+      "value": "6abb8b38ca05a7b9788d0fad"
+    },
+    {
+      "key": "retailerId",
+      "value": "6a64312909e1ef36a786a017"
+    },
+    {
+      "key": "storeSlug",
+      "value": ""
+    },
+    {
+      "key": "storeQrUrl",
+      "value": ""
+    },
+    {
+      "key": "upc",
+      "value": "712345000002"
+    },
+    {
+      "key": "lat",
+      "value": "23.8103"
+    },
+    {
+      "key": "lng",
+      "value": "90.4125"
+    },
+    {
+      "key": "journalId",
+      "value": ""
+    },
+    {
+      "key": "excludeInventoryIds",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "customerRegister",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/customer-register",
+            "description": "customerRegister: Required: fullName non-empty, email valid, password min 6. Customer role set by backend. Duplicate email 409. Registration does NOT send signup OTP.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"{{fullName}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/customer-register",
+                "description": "customerRegister: Required: fullName non-empty, email valid, password min 6. Customer role set by backend. Duplicate email 409. Registration does NOT send signup OTP.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"{{fullName}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Customer registered successfully\",\n  \"data\": {\n    \"accessToken\": \"EXAMPLE_JWT_NOT_VALID\",\n    \"newUser\": {\n      \"id\": \"000000000000000000000001\",\n      \"fullName\": \"Demo Customer\",\n      \"email\": \"demo@example.com\",\n      \"role\": \"customer\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.success && body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "login: Required email/password (min 6). Login user uses _id, registration newUser uses id. Cookie refreshToken set, but no refresh route found. Suspended 403, wrong password 401, missing user 404.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/login",
+                "description": "login: Required email/password (min 6). Login user uses _id, registration newUser uses id. Cookie refreshToken set, but no refresh route found. Suspended 403, wrong password 401, missing user 404.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"User logged in successfully\",\n  \"data\": {\n    \"accessToken\": \"EXAMPLE_JWT_NOT_VALID\",\n    \"user\": {\n      \"_id\": \"000000000000000000000001\",\n      \"fullName\": \"Demo Customer\",\n      \"email\": \"demo@example.com\",\n      \"role\": \"customer\",\n      \"status\": \"active\",\n      \"verfied\": \"pending\"\n    }\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.success && body.data?.accessToken) pm.environment.set('accessToken', body.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "forgotPassword",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "description": "forgotPassword: Sends password-reset email; this request has an external effect. OTP validity is 1 hour in current service. No dedicated resend route; do not automatically resend.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/forgot-password",
+                "description": "forgotPassword: Sends password-reset email; this request has an external effect. OTP validity is 1 hour in current service. No dedicated resend route; do not automatically resend.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Email sent successfully\",\n  \"data\": {\n    \"message\": \"Check your email for OTP\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "verifyResetOtp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/verify",
+            "description": "verifyResetOtp: RESET OTP only. Sets verifiedForget=true and clears OTP; do not interpret as completed signup/email verification.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/verify",
+                "description": "verifyResetOtp: RESET OTP only. Sets verifiedForget=true and clears OTP; do not interpret as completed signup/email verification.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{otp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Email verified successfully\",\n  \"data\": {\n    \"message\": \"OTP verified successfully\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "resetPassword",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/reset-password",
+            "description": "resetPassword: Email + newPassword min 6. Requires prior reset OTP verification.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/reset-password",
+                "description": "resetPassword: Email + newPassword min 6. Requires prior reset OTP verification.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Password changed successfully\",\n  \"data\": {\n    \"message\": \"Password reset successfully\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "changePassword",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/change-password",
+            "description": "changePassword: Both passwords min 6; same new/old password rejected. POST, not PATCH.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/auth/change-password",
+                "description": "changePassword: Both passwords min 6; same new/old password rejected. POST, not PATCH.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"oldPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Password changed successfully\",\n  \"data\": {\n    \"message\": \"Password changed successfully\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Taste profile",
+      "item": [
+        {
+          "name": "getTasteProfile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-profile/me",
+            "description": "getTasteProfile: No profile → data:null. GET populates userId object; write responses can contain userId string. Ignore extra database fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-profile/me",
+                "description": "getTasteProfile: No profile → data:null. GET populates userId object; write responses can contain userId string. Ignore extra database fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Taste profile retrieved successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000003\",\n    \"userId\": {\n      \"_id\": \"000000000000000000000001\",\n      \"fullName\": \"Demo Customer\",\n      \"email\": \"demo@example.com\",\n      \"role\": \"customer\",\n      \"status\": \"active\",\n      \"verfied\": \"pending\"\n    },\n    \"experienceLevel\": \"experienced\",\n    \"preferredStrengths\": [\n      \"medium\"\n    ],\n    \"preferredWrappers\": [\n      \"Indonesian\"\n    ],\n    \"preferredFlavors\": [\n      \"Cedar\",\n      \"Nuts\"\n    ],\n    \"preferredOrigins\": [\n      \"Dominican Republic\"\n    ],\n    \"preferredSmokingTimes\": [\n      \"45\"\n    ],\n    \"favoriteBrands\": [\n      \"Romeo y Julieta\"\n    ],\n    \"minBudget\": 10,\n    \"maxBudget\": 20,\n    \"onboardingCompleted\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "completeOnboarding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-profile/onboarding",
+            "description": "completeOnboarding: Fields optional; experienceLevel beginner|experienced; preference arrays max 50 non-empty strings; numeric budgets >=0 and min<=max. Explicitly marks completed. UI Q1–Q4 must map labels to real fields; beverage pairing is not a persisted profile field.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"experienceLevel\": \"experienced\",\n  \"preferredStrengths\": [\n    \"medium\"\n  ],\n  \"preferredWrappers\": [\n    \"Indonesian\"\n  ],\n  \"preferredFlavors\": [\n    \"Cedar\",\n    \"Nuts\"\n  ],\n  \"preferredOrigins\": [\n    \"Dominican Republic\"\n  ],\n  \"preferredSmokingTimes\": [\n    \"45\"\n  ],\n  \"favoriteBrands\": [\n    \"Romeo y Julieta\"\n  ],\n  \"minBudget\": 10,\n  \"maxBudget\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-profile/onboarding",
+                "description": "completeOnboarding: Fields optional; experienceLevel beginner|experienced; preference arrays max 50 non-empty strings; numeric budgets >=0 and min<=max. Explicitly marks completed. UI Q1–Q4 must map labels to real fields; beverage pairing is not a persisted profile field.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"experienceLevel\": \"experienced\",\n  \"preferredStrengths\": [\n    \"medium\"\n  ],\n  \"preferredWrappers\": [\n    \"Indonesian\"\n  ],\n  \"preferredFlavors\": [\n    \"Cedar\",\n    \"Nuts\"\n  ],\n  \"preferredOrigins\": [\n    \"Dominican Republic\"\n  ],\n  \"preferredSmokingTimes\": [\n    \"45\"\n  ],\n  \"favoriteBrands\": [\n    \"Romeo y Julieta\"\n  ],\n  \"minBudget\": 10,\n  \"maxBudget\": 20\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Onboarding completed successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000003\",\n    \"userId\": \"000000000000000000000001\",\n    \"experienceLevel\": \"experienced\",\n    \"preferredStrengths\": [\n      \"medium\"\n    ],\n    \"preferredWrappers\": [\n      \"Indonesian\"\n    ],\n    \"preferredFlavors\": [\n      \"Cedar\",\n      \"Nuts\"\n    ],\n    \"preferredOrigins\": [\n      \"Dominican Republic\"\n    ],\n    \"preferredSmokingTimes\": [\n      \"45\"\n    ],\n    \"favoriteBrands\": [\n      \"Romeo y Julieta\"\n    ],\n    \"minBudget\": 10,\n    \"maxBudget\": 20,\n    \"onboardingCompleted\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "updateTasteProfile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-profile/me",
+            "description": "updateTasteProfile: Same optional fields as onboarding. Preserve unspecified fields; does not reset completion.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferredStrengths\": [\n    \"medium\"\n  ],\n  \"minBudget\": 10,\n  \"maxBudget\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-profile/me",
+                "description": "updateTasteProfile: Same optional fields as onboarding. Preserve unspecified fields; does not reset completion.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"preferredStrengths\": [\n    \"medium\"\n  ],\n  \"minBudget\": 10,\n  \"maxBudget\": 20\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Taste profile updated successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000003\",\n    \"userId\": \"000000000000000000000001\",\n    \"experienceLevel\": \"experienced\",\n    \"preferredStrengths\": [\n      \"medium\"\n    ],\n    \"preferredWrappers\": [\n      \"Indonesian\"\n    ],\n    \"preferredFlavors\": [\n      \"Cedar\",\n      \"Nuts\"\n    ],\n    \"preferredOrigins\": [\n      \"Dominican Republic\"\n    ],\n    \"preferredSmokingTimes\": [\n      \"45\"\n    ],\n    \"favoriteBrands\": [\n      \"Romeo y Julieta\"\n    ],\n    \"minBudget\": 10,\n    \"maxBudget\": 20,\n    \"onboardingCompleted\": true\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Catalog",
+      "item": [
+        {
+          "name": "catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/cigars?page=1&limit=20",
+            "description": "catalog: Optional valid customer bearer adds search activity. Only active masters. Price suggested, store availability unknown. page default1; limit default20/max100.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/cigars?page=1&limit=20",
+                "description": "catalog: Optional valid customer bearer adds search activity. Only active masters. Price suggested, store availability unknown. page default1; limit default20/max100.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170,\n      \"price\": 8.5,\n      \"available\": null\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "catalogSearch",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/cigars?search=Romeo&strength=medium&page=1&limit=20",
+            "description": "catalogSearch: Filters: search,brand,strength,wrapper,origin,flavor,size,minPrice,maxPrice,smokingTime,retailerId,page,limit. Query field search, not searchTerm.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/cigars?search=Romeo&strength=medium&page=1&limit=20",
+                "description": "catalogSearch: Filters: search,brand,strength,wrapper,origin,flavor,size,minPrice,maxPrice,smokingTime,retailerId,page,limit. Query field search, not searchTerm.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170,\n      \"price\": 8.5,\n      \"available\": null\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "storeCatalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/cigars?retailerId={{retailerId}}&page=1&limit=20",
+            "description": "storeCatalog: Approved retailer + active humidor + active positive stock + active master. Response still master id; no retailerId in each catalog item. Keep store context yourself.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/cigars?retailerId={{retailerId}}&page=1&limit=20",
+                "description": "storeCatalog: Approved retailer + active humidor + active positive stock + active master. Response still master id; no retailerId in each catalog item. Keep store context yourself.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170,\n      \"price\": 15.5,\n      \"available\": true\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "masterDetail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/cigars/{{masterCigarId}}",
+            "description": "masterDetail: Optional customer bearer for own state/view history. No stockist list without retailerId. Invalid ID400; missing/inactive master404.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/cigars/{{masterCigarId}}",
+                "description": "masterDetail: Optional customer bearer for own state/view history. No stockist list without retailerId. Invalid ID400; missing/inactive master404.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar details retrieved successfully\",\n  \"data\": {\n    \"cigar\": {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170\n    },\n    \"storeAvailability\": null,\n    \"userState\": {\n      \"favorite\": false,\n      \"wantToTry\": false,\n      \"smoked\": false,\n      \"rating\": null\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "masterStoreDetail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/cigars/{{masterCigarId}}?retailerId={{retailerId}}",
+            "description": "masterStoreDetail: Use locations[] for all stock positions and per-location prices. quantity totals sellable inventory; primary price is first in-stock location. No shelfRow, storeSlug or geo in current location projection.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/cigars/{{masterCigarId}}?retailerId={{retailerId}}",
+                "description": "masterStoreDetail: Use locations[] for all stock positions and per-location prices. quantity totals sellable inventory; primary price is first in-stock location. No shelfRow, storeSlug or geo in current location projection.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar details retrieved successfully\",\n  \"data\": {\n    \"cigar\": {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170\n    },\n    \"storeAvailability\": {\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\",\n      \"available\": true,\n      \"quantity\": 8,\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"location\": {\n        \"humidorId\": \"6abb8b3598de3a28946dc896\",\n        \"humidor\": \"Demo Humidor\",\n        \"wallId\": \"6abb8b3598de3a28946dc88a\",\n        \"wall\": \"Wall A\",\n        \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n        \"shelf\": \"Top Shelf\",\n        \"column\": 4\n      },\n      \"locations\": [\n        {\n          \"inventoryId\": \"6abb8b38ca05a7b9788d0fad\",\n          \"available\": true,\n          \"quantity\": 8,\n          \"price\": 15.5,\n          \"pricePerBox\": 150,\n          \"location\": {\n            \"humidorId\": \"6abb8b3598de3a28946dc896\",\n            \"humidor\": \"Demo Humidor\",\n            \"wallId\": \"6abb8b3598de3a28946dc88a\",\n            \"wall\": \"Wall A\",\n            \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n            \"shelf\": \"Top Shelf\",\n            \"column\": 4\n          }\n        }\n      ]\n    },\n    \"userState\": {\n      \"favorite\": false,\n      \"wantToTry\": false,\n      \"smoked\": false,\n      \"rating\": null\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Personal recommendations",
+      "item": [
+        {
+          "name": "recommendGlobal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/recommendations/me?limit=20",
+            "description": "recommendGlobal: Personal taste + behavior + journal. Score0–100 ranking, not measured enjoyment probability. Limit default20/max100; no page parameter.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/recommendations/me?limit=20",
+                "description": "recommendGlobal: Personal taste + behavior + journal. Score0–100 ranking, not measured enjoyment probability. Limit default20/max100; no page parameter.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Recommendations retrieved successfully\",\n  \"meta\": {\n    \"onboardingCompleted\": true\n  },\n  \"data\": [\n    {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170,\n      \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"matchScore\": 70,\n      \"matchReasons\": [\n        \"Illustrative reason; actual reasons vary\"\n      ],\n      \"available\": null,\n      \"price\": 8.5,\n      \"quantity\": null,\n      \"location\": null,\n      \"store\": null\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "recommendStore",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/recommendations/me?retailerId={{retailerId}}&limit=20",
+            "description": "recommendStore: Keep master id and store.locations[].inventoryId separately. Personal ranking differs from website guided search.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/recommendations/me?retailerId={{retailerId}}&limit=20",
+                "description": "recommendStore: Keep master id and store.locations[].inventoryId separately. Personal ranking differs from website guided search.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Recommendations retrieved successfully\",\n  \"meta\": {\n    \"onboardingCompleted\": true\n  },\n  \"data\": [\n    {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170,\n      \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"matchScore\": 70,\n      \"matchReasons\": [\n        \"Illustrative reason; actual reasons vary\"\n      ],\n      \"available\": true,\n      \"price\": 15.5,\n      \"quantity\": 8,\n      \"location\": {\n        \"humidorId\": \"6abb8b3598de3a28946dc896\",\n        \"humidor\": \"Demo Humidor\",\n        \"wallId\": \"6abb8b3598de3a28946dc88a\",\n        \"wall\": \"Wall A\",\n        \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n        \"shelf\": \"Top Shelf\",\n        \"column\": 4\n      },\n      \"store\": {\n        \"retailerId\": \"6a64312909e1ef36a786a017\",\n        \"storeName\": \"Demo Shop\",\n        \"available\": true,\n        \"quantity\": 8,\n        \"price\": 15.5,\n        \"pricePerBox\": 150,\n        \"location\": {\n          \"humidorId\": \"6abb8b3598de3a28946dc896\",\n          \"humidor\": \"Demo Humidor\",\n          \"wallId\": \"6abb8b3598de3a28946dc88a\",\n          \"wall\": \"Wall A\",\n          \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n          \"shelf\": \"Top Shelf\",\n          \"column\": 4\n        },\n        \"locations\": [\n          {\n            \"inventoryId\": \"6abb8b38ca05a7b9788d0fad\",\n            \"available\": true,\n            \"quantity\": 8,\n            \"price\": 15.5,\n            \"pricePerBox\": 150,\n            \"location\": {\n              \"humidorId\": \"6abb8b3598de3a28946dc896\",\n              \"humidor\": \"Demo Humidor\",\n              \"wallId\": \"6abb8b3598de3a28946dc88a\",\n              \"wall\": \"Wall A\",\n              \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n              \"shelf\": \"Top Shelf\",\n              \"column\": 4\n            }\n          }\n        ]\n      }\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Shops and storefront",
+      "item": [
+        {
+          "name": "nearbyShops",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/retailer/nearby?lat={{lat}}&lng={{lng}}&radius=5000&page=1&limit=20",
+            "description": "nearbyShops: Required lat[-90,90],lng[-180,180]. radius meters1–100000 default5000; limit max100. coordinates [longitude,latitude]. Distance meters. Only approved shops with geo data; does not imply clicked cigar is stocked.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/retailer/nearby?lat={{lat}}&lng={{lng}}&radius=5000&page=1&limit=20",
+                "description": "nearbyShops: Required lat[-90,90],lng[-180,180]. radius meters1–100000 default5000; limit max100. coordinates [longitude,latitude]. Distance meters. Only approved shops with geo data; does not imply clicked cigar is stocked.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Nearby retailers retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\",\n      \"storeSlug\": \"demo-shop\",\n      \"logo\": \"https://example.com/logo.png\",\n      \"address\": \"Example address\",\n      \"city\": \"Example city\",\n      \"location\": {\n        \"type\": \"Point\",\n        \"coordinates\": [\n          90.4125,\n          23.8103\n        ]\n      },\n      \"distance\": 500\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "shopBySlug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/retailer/slug/{{storeSlug}}",
+            "description": "shopBySlug: Returns retailer object (additional DB/populated fields possible); use _id as retailerId. This lookup alone does not filter approved status.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/retailer/slug/{{storeSlug}}",
+                "description": "shopBySlug: Returns retailer object (additional DB/populated fields possible); use _id as retailerId. This lookup alone does not filter approved status.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Retailer retrieved successfully\",\n  \"data\": {\n    \"_id\": \"6a64312909e1ef36a786a017\",\n    \"storeName\": \"Demo Shop\",\n    \"storeSlug\": \"demo-shop\",\n    \"status\": \"approved\",\n    \"address\": \"Example address\",\n    \"city\": \"Example city\",\n    \"logo\": \"https://example.com/logo.png\",\n    \"location\": {\n      \"type\": \"Point\",\n      \"coordinates\": [\n        90.4125,\n        23.8103\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "shopById",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/retailer/{{retailerId}}",
+            "description": "shopById: Store info lookup; use profile fields for shop view. Full source response may include additional DB fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/retailer/{{retailerId}}",
+                "description": "shopById: Store info lookup; use profile fields for shop view. Full source response may include additional DB fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Retailer retrieved successfully\",\n  \"data\": {\n    \"_id\": \"6a64312909e1ef36a786a017\",\n    \"storeName\": \"Demo Shop\",\n    \"storeSlug\": \"demo-shop\",\n    \"status\": \"approved\",\n    \"address\": \"Example address\",\n    \"city\": \"Example city\",\n    \"logo\": \"https://example.com/logo.png\",\n    \"location\": {\n      \"type\": \"Point\",\n      \"coordinates\": [\n        90.4125,\n        23.8103\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "storeInventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/inventory-list?page=1&limit=20",
+            "description": "storeInventory: Website uses this. _id inventory ID; masterCigarId is usually string here (not populated). Active quantity>0. Default pagination limit10 if omitted; set20 explicitly.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/inventory-list?page=1&limit=20",
+                "description": "storeInventory: Website uses this. _id inventory ID; masterCigarId is usually string here (not populated). Active quantity>0. Default pagination limit10 if omitted; set20 explicitly.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Inventory retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n      \"masterCigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"humidorId\": \"6abb8b3598de3a28946dc896\",\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"30\",\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"quantity\": 8,\n      \"status\": \"active\",\n      \"wallId\": \"6abb8b3598de3a28946dc88a\",\n      \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n      \"wallName\": \"Wall A\",\n      \"shelfName\": \"Top Shelf\",\n      \"shelfRow\": 1,\n      \"shelfColumn\": 4,\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"isStaffPick\": false,\n      \"isNewArrival\": false,\n      \"isDailyFeatured\": false,\n      \"isOnDiscount\": false\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "storeInventorySearch",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/inventory-list?searchTerm=Romeo&minPrice=10&maxPrice=20&page=1&limit=20",
+            "description": "storeInventorySearch: Filters searchTerm,name,brand,productLine,manufacturer,country,wrapper,binder,filler,strength,size,length,flavorNotes,smokingTime,description,whyYoullLikeThis,pairingSuggestions,minPrice,maxPrice; sortBy/sortOrder. Uses searchTerm, not search.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/inventory-list?searchTerm=Romeo&minPrice=10&maxPrice=20&page=1&limit=20",
+                "description": "storeInventorySearch: Filters searchTerm,name,brand,productLine,manufacturer,country,wrapper,binder,filler,strength,size,length,flavorNotes,smokingTime,description,whyYoullLikeThis,pairingSuggestions,minPrice,maxPrice; sortBy/sortOrder. Uses searchTerm, not search.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Inventory retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n      \"masterCigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"humidorId\": \"6abb8b3598de3a28946dc896\",\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"30\",\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"quantity\": 8,\n      \"status\": \"active\",\n      \"wallId\": \"6abb8b3598de3a28946dc88a\",\n      \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n      \"wallName\": \"Wall A\",\n      \"shelfName\": \"Top Shelf\",\n      \"shelfRow\": 1,\n      \"shelfColumn\": 4,\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"isStaffPick\": false,\n      \"isNewArrival\": false,\n      \"isDailyFeatured\": false,\n      \"isOnDiscount\": false\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "staffPicks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/staff-picks",
+            "description": "staffPicks: Example enabled staff pick is hypothetical; supplied inventory isStaffPick=false. Actual source projects feature/public fields, may omit masterCigarId; inventory detail resolves master ID.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/staff-picks",
+                "description": "staffPicks: Example enabled staff pick is hypothetical; supplied inventory isStaffPick=false. Actual source projects feature/public fields, may omit masterCigarId; inventory detail resolves master ID.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Staff picks retrieved successfully\",\n  \"data\": {\n    \"count\": 1,\n    \"data\": [\n      {\n        \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"30\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 15.5,\n        \"quantity\": 8,\n        \"pairingSuggestions\": [\n          \"Bourbon\",\n          \"Coffee\"\n        ],\n        \"wallName\": \"Wall A\",\n        \"shelfName\": \"Top Shelf\",\n        \"shelfRow\": 1,\n        \"shelfColumn\": 4,\n        \"humidorName\": \"Demo Humidor\",\n        \"description\": \"A well-balanced, aromatic smoke.\",\n        \"staffPickBy\": \"Demo Staff\",\n        \"staffPickNote\": \"Illustrative staff note\",\n        \"staffPickAddedAt\": \"2026-10-03T00:00:00.000Z\"\n      }\n    ],\n    \"groupedByStaff\": {\n      \"Demo Staff\": [\n        {\n          \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n          \"name\": \"Romeo y Julieta 1875 Bully\",\n          \"brand\": \"Romeo y Julieta\",\n          \"strength\": \"medium\",\n          \"size\": \"5 x 50\",\n          \"smokingTime\": \"30\",\n          \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n          \"price\": 15.5,\n          \"quantity\": 8,\n          \"pairingSuggestions\": [\n            \"Bourbon\",\n            \"Coffee\"\n          ],\n          \"wallName\": \"Wall A\",\n          \"shelfName\": \"Top Shelf\",\n          \"shelfRow\": 1,\n          \"shelfColumn\": 4,\n          \"humidorName\": \"Demo Humidor\",\n          \"description\": \"A well-balanced, aromatic smoke.\",\n          \"staffPickBy\": \"Demo Staff\",\n          \"staffPickNote\": \"Illustrative staff note\",\n          \"staffPickAddedAt\": \"2026-10-03T00:00:00.000Z\"\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "newArrivals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/new-arrivals",
+            "description": "newArrivals: Illustrative enabled arrival, not live inventory state. Optional fields/expiry depend record.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/new-arrivals",
+                "description": "newArrivals: Illustrative enabled arrival, not live inventory state. Optional fields/expiry depend record.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"New arrivals retrieved successfully\",\n  \"data\": {\n    \"count\": 1,\n    \"data\": [\n      {\n        \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"30\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 15.5,\n        \"quantity\": 8,\n        \"pairingSuggestions\": [\n          \"Bourbon\",\n          \"Coffee\"\n        ],\n        \"wallName\": \"Wall A\",\n        \"shelfName\": \"Top Shelf\",\n        \"shelfRow\": 1,\n        \"shelfColumn\": 4,\n        \"humidorName\": \"Demo Humidor\",\n        \"newArrivalNote\": \"Illustrative arrival note\",\n        \"arrivalDate\": \"2026-10-03T00:00:00.000Z\",\n        \"daysShowing\": 0,\n        \"autoRemoveDays\": 30,\n        \"newArrivalExpiresAt\": \"2026-11-02T00:00:00.000Z\"\n      }\n    ],\n    \"groupedByRecency\": {\n      \"today\": [\n        {\n          \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n          \"name\": \"Romeo y Julieta 1875 Bully\",\n          \"brand\": \"Romeo y Julieta\",\n          \"strength\": \"medium\",\n          \"size\": \"5 x 50\",\n          \"smokingTime\": \"30\",\n          \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n          \"price\": 15.5,\n          \"quantity\": 8,\n          \"pairingSuggestions\": [\n            \"Bourbon\",\n            \"Coffee\"\n          ],\n          \"wallName\": \"Wall A\",\n          \"shelfName\": \"Top Shelf\",\n          \"shelfRow\": 1,\n          \"shelfColumn\": 4,\n          \"humidorName\": \"Demo Humidor\",\n          \"newArrivalNote\": \"Illustrative arrival note\",\n          \"arrivalDate\": \"2026-10-03T00:00:00.000Z\",\n          \"daysShowing\": 0,\n          \"autoRemoveDays\": 30,\n          \"newArrivalExpiresAt\": \"2026-11-02T00:00:00.000Z\"\n        }\n      ],\n      \"thisWeek\": [],\n      \"thisMonth\": []\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "dailyFeatured",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/daily-featured",
+            "description": "dailyFeatured: Illustrative feature, not live state. Time/date policy is server-side; current regular consumer store price does not automatically equal featuredPrice.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/daily-featured",
+                "description": "dailyFeatured: Illustrative feature, not live state. Time/date policy is server-side; current regular consumer store price does not automatically equal featuredPrice.\nAvailability: workspace-and-zip\nParser: data.data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Daily featured retrieved successfully\",\n  \"data\": {\n    \"count\": 1,\n    \"data\": [\n      {\n        \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"30\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 15.5,\n        \"quantity\": 8,\n        \"pairingSuggestions\": [\n          \"Bourbon\",\n          \"Coffee\"\n        ],\n        \"wallName\": \"Wall A\",\n        \"shelfName\": \"Top Shelf\",\n        \"shelfRow\": 1,\n        \"shelfColumn\": 4,\n        \"humidorName\": \"Demo Humidor\",\n        \"wrapper\": \"Indonesian\",\n        \"description\": \"A well-balanced, aromatic smoke.\",\n        \"featuredNote\": \"Illustrative feature note\",\n        \"featuredDate\": \"2026-10-03T00:00:00.000Z\",\n        \"featuredPrice\": 14,\n        \"saving\": 1.5\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Details and similar",
+      "item": [
+        {
+          "name": "inventoryDetail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{inventoryId}}",
+            "description": "inventoryDetail: Website detail API. Includes populated objects and extra DB fields. Use shelfRow/shelfColumn. Public findById currently needs safe projection/visibility alignment before treating it as global consumer contract.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{inventoryId}}",
+                "description": "inventoryDetail: Website detail API. Includes populated objects and extra DB fields. Use shelfRow/shelfColumn. Public findById currently needs safe projection/visibility alignment before treating it as global consumer contract.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Inventory retrieved successfully\",\n  \"data\": {\n    \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n    \"masterCigarId\": {\n      \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170\n    },\n    \"retailerId\": {\n      \"_id\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\",\n      \"storeSlug\": \"demo-shop\",\n      \"status\": \"approved\",\n      \"address\": \"Example address\",\n      \"city\": \"Example city\",\n      \"logo\": \"https://example.com/logo.png\",\n      \"location\": {\n        \"type\": \"Point\",\n        \"coordinates\": [\n          90.4125,\n          23.8103\n        ]\n      }\n    },\n    \"humidorId\": {\n      \"_id\": \"6abb8b3598de3a28946dc896\",\n      \"name\": \"Demo Humidor\"\n    },\n    \"name\": \"Romeo y Julieta 1875 Bully\",\n    \"brand\": \"Romeo y Julieta\",\n    \"productLine\": \"1875\",\n    \"strength\": \"medium\",\n    \"wrapper\": \"Indonesian\",\n    \"size\": \"5 x 50\",\n    \"smokingTime\": \"30\",\n    \"description\": \"A well-balanced, aromatic smoke.\",\n    \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n    \"price\": 15.5,\n    \"pricePerBox\": 150,\n    \"quantity\": 8,\n    \"status\": \"active\",\n    \"wallId\": \"6abb8b3598de3a28946dc88a\",\n    \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n    \"wallName\": \"Wall A\",\n    \"shelfName\": \"Top Shelf\",\n    \"shelfRow\": 1,\n    \"shelfColumn\": 4,\n    \"pairingSuggestions\": [\n      \"Bourbon\",\n      \"Coffee\"\n    ],\n    \"isStaffPick\": false,\n    \"isNewArrival\": false,\n    \"isDailyFeatured\": false,\n    \"isOnDiscount\": false,\n    \"humidorName\": \"Demo Humidor\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "related",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/{{inventoryId}}/related",
+            "description": "related: Same store, exclude current, active stock. Enjoy same brand OR wrapper max4; exclusive higher price max3; similar same strength AND wrapper max4. Each related _id inventory ID.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/{{inventoryId}}/related",
+                "description": "related: Same store, exclude current, active stock. Enjoy same brand OR wrapper max4; exclusive higher price max3; similar same strength AND wrapper max4. Each related _id inventory ID.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Related cigars retrieved successfully\",\n  \"data\": {\n    \"youMightAlsoEnjoy\": [\n      {\n        \"_id\": \"000000000000000000000005\",\n        \"name\": \"Example similar cigar\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"45\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 16,\n        \"quantity\": 5,\n        \"status\": \"active\",\n        \"pairingSuggestions\": [\n          \"Coffee\"\n        ]\n      }\n    ],\n    \"moreExclusive\": [\n      {\n        \"_id\": \"000000000000000000000005\",\n        \"name\": \"Example similar cigar\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"45\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 16,\n        \"quantity\": 5,\n        \"status\": \"active\",\n        \"pairingSuggestions\": [\n          \"Coffee\"\n        ]\n      }\n    ],\n    \"similarCigars\": [\n      {\n        \"_id\": \"000000000000000000000005\",\n        \"name\": \"Example similar cigar\",\n        \"brand\": \"Romeo y Julieta\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\",\n        \"size\": \"5 x 50\",\n        \"smokingTime\": \"45\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"price\": 16,\n        \"quantity\": 5,\n        \"status\": \"active\",\n        \"pairingSuggestions\": [\n          \"Coffee\"\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "exclusive",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/{{inventoryId}}/exclusive-picks",
+            "description": "exclusive: Higher regular price, max3. Already available in related.moreExclusive; avoid duplicate fetch unless section loaded independently.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/{{inventoryId}}/exclusive-picks",
+                "description": "exclusive: Higher regular price, max3. Already available in related.moreExclusive; avoid duplicate fetch unless section loaded independently.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"More exclusive cigars retrieved successfully\",\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000005\",\n      \"name\": \"Example similar cigar\",\n      \"brand\": \"Romeo y Julieta\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"45\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 16,\n      \"quantity\": 5,\n      \"status\": \"active\",\n      \"pairingSuggestions\": [\n        \"Coffee\"\n      ]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "surprise",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/surprise-me?exclude={{excludeInventoryIds}}",
+            "description": "surprise: Optional comma-separated exclude IDs. Parse data.item and limitReached; item null when limit reached/no result depending branch. Source has max attempts policy; do not assume perpetual picks.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/surprise-me?exclude={{excludeInventoryIds}}",
+                "description": "surprise: Optional comma-separated exclude IDs. Parse data.item and limitReached; item null when limit reached/no result depending branch. Source has max attempts policy; do not assume perpetual picks.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Surprise pick retrieved successfully\",\n  \"data\": {\n    \"limitReached\": false,\n    \"triesUsed\": 1,\n    \"triesRemaining\": 4,\n    \"maxTries\": 5,\n    \"item\": {\n      \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n      \"masterCigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"humidorId\": \"6abb8b3598de3a28946dc896\",\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"30\",\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"quantity\": 8,\n      \"status\": \"active\",\n      \"wallId\": \"6abb8b3598de3a28946dc88a\",\n      \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n      \"wallName\": \"Wall A\",\n      \"shelfName\": \"Top Shelf\",\n      \"shelfRow\": 1,\n      \"shelfColumn\": 4,\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"isStaffPick\": false,\n      \"isNewArrival\": false,\n      \"isDailyFeatured\": false,\n      \"isOnDiscount\": false,\n      \"location\": {\n        \"humidorName\": \"Demo Humidor\",\n        \"wallName\": \"Wall A\",\n        \"shelfName\": \"Top Shelf\",\n        \"shelfRow\": 1,\n        \"shelfColumn\": 4\n      },\n      \"whyThisCigar\": \"Illustrative explanation\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Scan",
+      "item": [
+        {
+          "name": "resolveStoreQr",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/qrcodes/resolve-store",
+            "description": "resolveStoreQr: value required valid store URL from configured FRONTEND_URL origin, path /store/{slug}; approved retailer. No server store session; save context in app.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"{{storeQrUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/qrcodes/resolve-store",
+                "description": "resolveStoreQr: value required valid store URL from configured FRONTEND_URL origin, path /store/{slug}; approved retailer. No server store session; save context in app.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"value\": \"{{storeQrUrl}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Store identified successfully\",\n  \"data\": {\n    \"retailerId\": \"6a64312909e1ef36a786a017\",\n    \"storeName\": \"Demo Shop\",\n    \"storeSlug\": \"demo-shop\",\n    \"logo\": \"https://example.com/logo.png\",\n    \"address\": \"Example address\",\n    \"city\": \"Example city\",\n    \"storeMode\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "scanUpc",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/scans/upc",
+            "description": "scanUpc: Code string, keep leading zeros. Retailer optional. Without retailer store:null. Optional customer token saves scan history. Camera band-photo recognition is a different, missing API.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{upc}}\",\n  \"retailerId\": \"{{retailerId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/scans/upc",
+                "description": "scanUpc: Code string, keep leading zeros. Retailer optional. Without retailer store:null. Optional customer token saves scan history. Camera band-photo recognition is a different, missing API.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{upc}}\",\n  \"retailerId\": \"{{retailerId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar identified successfully\",\n  \"data\": {\n    \"cigar\": {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170\n    },\n    \"store\": {\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\",\n      \"available\": true,\n      \"quantity\": 8,\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"location\": {\n        \"humidorId\": \"6abb8b3598de3a28946dc896\",\n        \"humidor\": \"Demo Humidor\",\n        \"wallId\": \"6abb8b3598de3a28946dc88a\",\n        \"wall\": \"Wall A\",\n        \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n        \"shelf\": \"Top Shelf\",\n        \"column\": 4\n      },\n      \"locations\": [\n        {\n          \"inventoryId\": \"6abb8b38ca05a7b9788d0fad\",\n          \"available\": true,\n          \"quantity\": 8,\n          \"price\": 15.5,\n          \"pricePerBox\": 150,\n          \"location\": {\n            \"humidorId\": \"6abb8b3598de3a28946dc896\",\n            \"humidor\": \"Demo Humidor\",\n            \"wallId\": \"6abb8b3598de3a28946dc88a\",\n            \"wall\": \"Wall A\",\n            \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n            \"shelf\": \"Top Shelf\",\n            \"column\": 4\n          }\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "lookupUpc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer/scans/upc/{{upc}}?retailerId={{retailerId}}",
+            "description": "lookupUpc: Same result as POST scan; code string in URL.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer/scans/upc/{{upc}}?retailerId={{retailerId}}",
+                "description": "lookupUpc: Same result as POST scan; code string in URL.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar identified successfully\",\n  \"data\": {\n    \"cigar\": {\n      \"id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"brand\": \"Romeo y Julieta\",\n      \"productLine\": \"1875\",\n      \"upcCodes\": [\n        \"712345000002\"\n      ],\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"manufacturer\": \"Altadis\",\n      \"country\": \"Dominican Republic\",\n      \"strength\": \"medium\",\n      \"wrapper\": \"Indonesian\",\n      \"binder\": \"Dominican\",\n      \"filler\": [\n        \"Dominican\"\n      ],\n      \"size\": \"5 x 50\",\n      \"length\": \"5\",\n      \"ringGauge\": 50,\n      \"flavorNotes\": [\n        \"Cedar\",\n        \"Nuts\",\n        \"Spice\"\n      ],\n      \"description\": \"A well-balanced, aromatic smoke.\",\n      \"whyYoullLikeThis\": \"Consistent and approachable.\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"estimatedSmokingTime\": \"45\",\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"suggestedRetailPriceEach\": 8.5,\n      \"suggestedRetailPricePerBox\": 170\n    },\n    \"store\": {\n      \"retailerId\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\",\n      \"available\": true,\n      \"quantity\": 8,\n      \"price\": 15.5,\n      \"pricePerBox\": 150,\n      \"location\": {\n        \"humidorId\": \"6abb8b3598de3a28946dc896\",\n        \"humidor\": \"Demo Humidor\",\n        \"wallId\": \"6abb8b3598de3a28946dc88a\",\n        \"wall\": \"Wall A\",\n        \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n        \"shelf\": \"Top Shelf\",\n        \"column\": 4\n      },\n      \"locations\": [\n        {\n          \"inventoryId\": \"6abb8b38ca05a7b9788d0fad\",\n          \"available\": true,\n          \"quantity\": 8,\n          \"price\": 15.5,\n          \"pricePerBox\": 150,\n          \"location\": {\n            \"humidorId\": \"6abb8b3598de3a28946dc896\",\n            \"humidor\": \"Demo Humidor\",\n            \"wallId\": \"6abb8b3598de3a28946dc88a\",\n            \"wall\": \"Wall A\",\n            \"shelfId\": \"6abb8b3598de3a28946dc88b\",\n            \"shelf\": \"Top Shelf\",\n            \"column\": 4\n          }\n        }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 My Cigars",
+      "item": [
+        {
+          "name": "myCigars",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars?type=favorites&page=1&limit=20",
+            "description": "myCigars: type favorites|want-to-try|smoked; omit for all user states. Outer _id is state record; use populated cigarId._id for master APIs. Optional removed master can populate null; handle it.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars?type=favorites&page=1&limit=20",
+                "description": "myCigars: type favorites|want-to-try|smoked; omit for all user states. Outer _id is state record; use populated cigarId._id for master APIs. Optional removed master can populate null; handle it.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"My cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000004\",\n      \"userId\": \"000000000000000000000001\",\n      \"cigarId\": {\n        \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n        \"brand\": \"Romeo y Julieta\",\n        \"productLine\": \"1875\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\"\n      },\n      \"isFavorite\": true,\n      \"wantToTry\": false,\n      \"hasSmoked\": false,\n      \"rating\": 5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "myWantToTry",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars?type=want-to-try&page=1&limit=20",
+            "description": "myWantToTry: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars?type=want-to-try&page=1&limit=20",
+                "description": "myWantToTry: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"My cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000004\",\n      \"userId\": \"000000000000000000000001\",\n      \"cigarId\": {\n        \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n        \"brand\": \"Romeo y Julieta\",\n        \"productLine\": \"1875\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\"\n      },\n      \"isFavorite\": true,\n      \"wantToTry\": true,\n      \"hasSmoked\": false,\n      \"rating\": 5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "mySmoked",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars?type=smoked&page=1&limit=20",
+            "description": "mySmoked: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars?type=smoked&page=1&limit=20",
+                "description": "mySmoked: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"My cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000004\",\n      \"userId\": \"000000000000000000000001\",\n      \"cigarId\": {\n        \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n        \"brand\": \"Romeo y Julieta\",\n        \"productLine\": \"1875\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\"\n      },\n      \"isFavorite\": true,\n      \"wantToTry\": false,\n      \"hasSmoked\": true,\n      \"rating\": 5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "myAllCigars",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars?page=1&limit=20",
+            "description": "myAllCigars: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars?page=1&limit=20",
+                "description": "myAllCigars: User-state list; master ID is nested cigarId._id. State examples hypothetical. No retailer price/location in this populated projection; open master detail and select shop.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"My cigars retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000004\",\n      \"userId\": \"000000000000000000000001\",\n      \"cigarId\": {\n        \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n        \"brand\": \"Romeo y Julieta\",\n        \"productLine\": \"1875\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\"\n      },\n      \"isFavorite\": true,\n      \"wantToTry\": false,\n      \"hasSmoked\": false,\n      \"rating\": 5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/favorite",
+            "description": "favorite: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/favorite",
+                "description": "favorite: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Cigar added to favorites\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": true,\n    \"wantToTry\": false,\n    \"hasSmoked\": false,\n    \"rating\": 5\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "unfavorite",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/favorite",
+            "description": "unfavorite: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/favorite",
+                "description": "unfavorite: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar removed from favorites\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": false,\n    \"wantToTry\": false,\n    \"hasSmoked\": false,\n    \"rating\": 5\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "wantToTry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/want-to-try",
+            "description": "wantToTry: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/want-to-try",
+                "description": "wantToTry: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Cigar added to want-to-try\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": true,\n    \"wantToTry\": true,\n    \"hasSmoked\": false,\n    \"rating\": 5\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "removeWantToTry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/want-to-try",
+            "description": "removeWantToTry: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/want-to-try",
+                "description": "removeWantToTry: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Cigar removed from want-to-try\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": true,\n    \"wantToTry\": false,\n    \"hasSmoked\": false,\n    \"rating\": 5\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "markSmoked",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/smoked",
+            "description": "markSmoked: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/smoked",
+                "description": "markSmoked: No request body. ID is active master cigar, never inventory. Mutation returns state with cigarId string; list populates cigarId object. No DELETE smoked route exists.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Cigar marked as smoked\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": true,\n    \"wantToTry\": false,\n    \"hasSmoked\": true,\n    \"rating\": 5,\n    \"lastSmokedAt\": \"2026-10-03T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "rateCigar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/rating",
+            "description": "rateCigar: Required integer1–5; saved personal rating, not public average.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/consumer-cigars/{{masterCigarId}}/rating",
+                "description": "rateCigar: Required integer1–5; saved personal rating, not public average.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Cigar rating saved\",\n  \"data\": {\n    \"_id\": \"000000000000000000000004\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"isFavorite\": true,\n    \"wantToTry\": false,\n    \"hasSmoked\": false,\n    \"rating\": 5\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 Journal",
+      "item": [
+        {
+          "name": "createJournal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/journal",
+            "description": "createJournal: Required cigarId active master; retailerId optional valid existing retailer; rating numeric1–5, notes max2000, flavorTags max20 strings, pricePaid>=0, smokedAt ISO optional, wouldSmokeAgain boolean. Automatically records smoked state and optional user rating.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cigarId\": \"{{masterCigarId}}\",\n  \"retailerId\": \"{{retailerId}}\",\n  \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n  \"rating\": 5,\n  \"notes\": \"Smooth, cedar and nuts.\",\n  \"flavorTags\": [\n    \"cedar\",\n    \"nuts\"\n  ],\n  \"strengthImpression\": \"medium\",\n  \"pricePaid\": 15.5,\n  \"wouldSmokeAgain\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/journal",
+                "description": "createJournal: Required cigarId active master; retailerId optional valid existing retailer; rating numeric1–5, notes max2000, flavorTags max20 strings, pricePaid>=0, smokedAt ISO optional, wouldSmokeAgain boolean. Automatically records smoked state and optional user rating.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cigarId\": \"{{masterCigarId}}\",\n  \"retailerId\": \"{{retailerId}}\",\n  \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n  \"rating\": 5,\n  \"notes\": \"Smooth, cedar and nuts.\",\n  \"flavorTags\": [\n    \"cedar\",\n    \"nuts\"\n  ],\n  \"strengthImpression\": \"medium\",\n  \"pricePaid\": 15.5,\n  \"wouldSmokeAgain\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Journal created successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000002\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"retailerId\": \"6a64312909e1ef36a786a017\",\n    \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n    \"rating\": 5,\n    \"notes\": \"Smooth, cedar and nuts.\",\n    \"flavorTags\": [\n      \"cedar\",\n      \"nuts\"\n    ],\n    \"strengthImpression\": \"medium\",\n    \"pricePaid\": 15.5,\n    \"wouldSmokeAgain\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "journalList",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/journal?page=1&limit=20",
+            "description": "journalList: List populates references; create/update/delete may return raw ID strings. Optional searchTerm,rating,flavorTags,strengthImpression,smokedAt,wouldSmokeAgain,page,limit,sortBy,sortOrder. Set page/limit explicitly; default limit10.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/journal?page=1&limit=20",
+                "description": "journalList: List populates references; create/update/delete may return raw ID strings. Optional searchTerm,rating,flavorTags,strengthImpression,smokedAt,wouldSmokeAgain,page,limit,sortBy,sortOrder. Set page/limit explicitly; default limit10.\nAvailability: workspace-and-zip\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Journals retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"000000000000000000000002\",\n      \"userId\": {\n        \"_id\": \"000000000000000000000001\",\n        \"email\": \"demo@example.com\"\n      },\n      \"cigarId\": {\n        \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n        \"brand\": \"Romeo y Julieta\",\n        \"name\": \"Romeo y Julieta 1875 Bully\",\n        \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n        \"strength\": \"medium\",\n        \"wrapper\": \"Indonesian\",\n        \"flavorNotes\": [\n          \"Cedar\",\n          \"Nuts\",\n          \"Spice\"\n        ]\n      },\n      \"retailerId\": {\n        \"_id\": \"6a64312909e1ef36a786a017\",\n        \"storeName\": \"Demo Shop\",\n        \"address\": \"Example address\",\n        \"city\": \"Example city\"\n      },\n      \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n      \"rating\": 5,\n      \"notes\": \"Smooth, cedar and nuts.\",\n      \"flavorTags\": [\n        \"cedar\",\n        \"nuts\"\n      ],\n      \"strengthImpression\": \"medium\",\n      \"pricePaid\": 15.5,\n      \"wouldSmokeAgain\": true\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "journalDetail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/journal/{{journalId}}",
+            "description": "journalDetail: Only own entry. Example minimal populated fields; actual selected master/user/retailer projections include more.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/journal/{{journalId}}",
+                "description": "journalDetail: Only own entry. Example minimal populated fields; actual selected master/user/retailer projections include more.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Journal retrieved successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000002\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": {\n      \"_id\": \"6abb8af3ca05a7b9788d0f0e\",\n      \"name\": \"Romeo y Julieta 1875 Bully\"\n    },\n    \"retailerId\": {\n      \"_id\": \"6a64312909e1ef36a786a017\",\n      \"storeName\": \"Demo Shop\"\n    },\n    \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n    \"rating\": 5,\n    \"notes\": \"Smooth, cedar and nuts.\",\n    \"flavorTags\": [\n      \"cedar\",\n      \"nuts\"\n    ],\n    \"strengthImpression\": \"medium\",\n    \"pricePaid\": 15.5,\n    \"wouldSmokeAgain\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "updateJournal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/journal/{{journalId}}",
+            "description": "updateJournal: Same optional editable fields excluding cigarId; retailerId:null clears retailer. Updates journal ranking signal but current service does not resync UserCigar.rating.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Updated notes\",\n  \"rating\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/journal/{{journalId}}",
+                "description": "updateJournal: Same optional editable fields excluding cigarId; retailerId:null clears retailer. Updates journal ranking signal but current service does not resync UserCigar.rating.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"notes\": \"Updated notes\",\n  \"rating\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Journal updated successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000002\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"retailerId\": \"6a64312909e1ef36a786a017\",\n    \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n    \"rating\": 4,\n    \"notes\": \"Updated notes\",\n    \"flavorTags\": [\n      \"cedar\",\n      \"nuts\"\n    ],\n    \"strengthImpression\": \"medium\",\n    \"pricePaid\": 15.5,\n    \"wouldSmokeAgain\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "deleteJournal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/journal/{{journalId}}",
+            "description": "deleteJournal: Only own entry; returns deleted record. Does not automatically remove smoked/favorite state. Do not bulk-run deletes against real entries.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/journal/{{journalId}}",
+                "description": "deleteJournal: Only own entry; returns deleted record. Does not automatically remove smoked/favorite state. Do not bulk-run deletes against real entries.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Journal deleted successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000002\",\n    \"userId\": \"000000000000000000000001\",\n    \"cigarId\": \"6abb8af3ca05a7b9788d0f0e\",\n    \"retailerId\": \"6a64312909e1ef36a786a017\",\n    \"smokedAt\": \"2026-10-03T10:00:00.000Z\",\n    \"rating\": 5,\n    \"notes\": \"Smooth, cedar and nuts.\",\n    \"flavorTags\": [\n      \"cedar\",\n      \"nuts\"\n    ],\n    \"strengthImpression\": \"medium\",\n    \"pricePaid\": 15.5,\n    \"wouldSmokeAgain\": true\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 Account",
+      "item": [
+        {
+          "name": "accountProfile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/user/profile",
+            "description": "accountProfile: Account profile, not taste profile. May include optional profilePicture,address,phoneNumber/dateOfBirth and additional DB fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/user/profile",
+                "description": "accountProfile: Account profile, not taste profile. May include optional profilePicture,address,phoneNumber/dateOfBirth and additional DB fields.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"User fetched successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000001\",\n    \"fullName\": \"Demo Customer\",\n    \"email\": \"demo@example.com\",\n    \"role\": \"customer\",\n    \"status\": \"active\",\n    \"verfied\": \"pending\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "updateAccountProfile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/user/profile",
+            "description": "updateAccountProfile: Multipart text fullName; optional file profilePicture. Other editable personal fields address,phoneNumber,country,stateRegion,nationality,postcode,dateOfBirth ISO; send only intended profile fields. Postman file item disabled until selected.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "fullName",
+                  "value": "Demo Customer Updated",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/user/profile",
+                "description": "updateAccountProfile: Multipart text fullName; optional file profilePicture. Other editable personal fields address,phoneNumber,country,stateRegion,nationality,postcode,dateOfBirth ISO; send only intended profile fields. Postman file item disabled until selected.\nAvailability: workspace-and-zip\nParser: data\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "fullName",
+                      "value": "Demo Customer Updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "profilePicture",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"User updated successfully\",\n  \"data\": {\n    \"_id\": \"000000000000000000000001\",\n    \"fullName\": \"Demo Customer Updated\",\n    \"email\": \"demo@example.com\",\n    \"role\": \"customer\",\n    \"status\": \"active\",\n    \"verfied\": \"pending\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 ZIP-only guided discovery",
+      "item": [
+        {
+          "name": "guidedStoreGet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/guided-discovery?strength=medium&minBudget=10&maxBudget=20&smokingTime=60&wrapper=Indonesian&pairingSuggestions=Coffee&profile=familiar&limit=6",
+            "description": "guidedStoreGet: ZIP-only, absent current workspace. GET aliases wrapper/profile; smokingTime30|60|90|120+, strength enum, limit1–20. Website fallback invents score if endpoint missing. Confirm deployed route before using.\nAvailability: zip-only\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/guided-discovery?strength=medium&minBudget=10&maxBudget=20&smokingTime=60&wrapper=Indonesian&pairingSuggestions=Coffee&profile=familiar&limit=6",
+                "description": "guidedStoreGet: ZIP-only, absent current workspace. GET aliases wrapper/profile; smokingTime30|60|90|120+, strength enum, limit1–20. Website fallback invents score if endpoint missing. Confirm deployed route before using.\nAvailability: zip-only\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Guided discovery recommendations retrieved successfully\",\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 6,\n    \"total\": 1\n  },\n  \"data\": [\n    {\n      \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"brand\": \"Romeo y Julieta\",\n      \"strength\": \"medium\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"30\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 15.5,\n      \"quantity\": 8,\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"wallName\": \"Wall A\",\n      \"shelfName\": \"Top Shelf\",\n      \"shelfRow\": 1,\n      \"shelfColumn\": 4,\n      \"humidorName\": \"Demo Humidor\",\n      \"wrapper\": \"Indonesian\",\n      \"inStock\": true,\n      \"rank\": 1,\n      \"label\": \"Top Match\",\n      \"matchScore\": 85,\n      \"matchReason\": \"Illustrative match explanation\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "guidedStorePost",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/inventory/{{storeSlug}}/guided-discovery",
+            "description": "guidedStorePost: ZIP-only, absent current workspace. POST DTO uses wrapperPreference/preference; pairing field present in ZIP DTO. Response/ranking differs from personalized endpoint.\nAvailability: zip-only\nParser: data[]\nSource-derived response example, not production capture.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"strength\": \"medium\",\n  \"minBudget\": 10,\n  \"maxBudget\": 20,\n  \"smokingTime\": \"60\",\n  \"wrapperPreference\": \"Indonesian\",\n  \"pairingSuggestions\": \"Coffee\",\n  \"preference\": \"familiar\",\n  \"limit\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Source-derived example (NOT live)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/inventory/{{storeSlug}}/guided-discovery",
+                "description": "guidedStorePost: ZIP-only, absent current workspace. POST DTO uses wrapperPreference/preference; pairing field present in ZIP DTO. Response/ranking differs from personalized endpoint.\nAvailability: zip-only\nParser: data[]\nSource-derived response example, not production capture.",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"strength\": \"medium\",\n  \"minBudget\": 10,\n  \"maxBudget\": 20,\n  \"smokingTime\": \"60\",\n  \"wrapperPreference\": \"Indonesian\",\n  \"pairingSuggestions\": \"Coffee\",\n  \"preference\": \"familiar\",\n  \"limit\": 6\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 200,\n  \"success\": true,\n  \"message\": \"Guided discovery recommendations retrieved successfully\",\n  \"data\": [\n    {\n      \"_id\": \"6abb8b38ca05a7b9788d0fad\",\n      \"name\": \"Romeo y Julieta 1875 Bully\",\n      \"brand\": \"Romeo y Julieta\",\n      \"strength\": \"medium\",\n      \"size\": \"5 x 50\",\n      \"smokingTime\": \"30\",\n      \"image\": \"https://picsum.photos/seed/cigar-2/800/600\",\n      \"price\": 15.5,\n      \"quantity\": 8,\n      \"pairingSuggestions\": [\n        \"Bourbon\",\n        \"Coffee\"\n      ],\n      \"wallName\": \"Wall A\",\n      \"shelfName\": \"Top Shelf\",\n      \"shelfRow\": 1,\n      \"shelfColumn\": 4,\n      \"humidorName\": \"Demo Humidor\",\n      \"wrapper\": \"Indonesian\",\n      \"inStock\": true,\n      \"rank\": 1,\n      \"label\": \"Top Match\",\n      \"matchScore\": 85,\n      \"matchReason\": \"Illustrative match explanation\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 6,\n    \"total\": 1\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
