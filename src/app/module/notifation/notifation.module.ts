@@ -8,7 +8,10 @@ import {
 import { Retailer, RetailerSchema } from '../retailer/entities/retailer.entity';
 import { SettingsModule } from '../settings/settings.module';
 import { Notifation, NotifationSchema } from './entities/notifation.entity';
-import { NotifationController } from './notifation.controller';
+import {
+  CustomerNotificationsController,
+  NotifationController,
+} from './notifation.controller';
 import { NotifationService } from './notifation.service';
 
 @Module({
@@ -20,7 +23,7 @@ import { NotifationService } from './notifation.service';
     ]),
     SettingsModule,
   ],
-  controllers: [NotifationController],
+  controllers: [NotifationController, CustomerNotificationsController],
   providers: [NotifationService, PendingApprovalReminderCronService],
   exports: [NotifationService],
 })

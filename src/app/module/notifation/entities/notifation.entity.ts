@@ -11,20 +11,23 @@ export const NOTIFICATION_TYPES = [
   'retailer_rejected',
   'product_approved',
   'subscription_expired',
+  'customer_welcome',
+  'cigar_added',
+  'recommendation_ready',
 ] as const;
 
 export type NotifationType = (typeof NOTIFICATION_TYPES)[number];
 
 @Schema({ timestamps: true })
 export class Notifation {
-  @Prop({ enum: ['admin', 'retailer'], required: true })
+  @Prop({ enum: ['admin', 'retailer', 'customer'], required: true })
   recipientRole!: string;
 
-  // Only set when recipientRole === 'retailer' - the specific user to notify.
+  // Set for retailer and customer notifications - the specific user to notify.
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   userId?: Types.ObjectId;
 
-  @Prop({ enum: NOTIFICATION_TYPES, required: true })
+  @Prop({ type: String, enum: NOTIFICATION_TYPES, required: true })
   type!: NotifationType;
 
   @Prop({ required: true })

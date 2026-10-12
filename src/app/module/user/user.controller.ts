@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -28,6 +29,7 @@ import pick from 'src/app/helpers/pick';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateFcmTokenDto } from './dto/update-fcm-token.dto';
 import { UserService } from './user.service';
 
 @ApiTags('User')
@@ -267,6 +269,25 @@ export class UserController {
     );
     return {
       message: 'User updated successfully',
+      data: result,
+    };
+  }
+
+  @Patch('update-fcm-token')
+  @ApiOperation({ summary: 'Update the current customer FCM token' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @HttpCode(HttpStatus.OK)
+  async updateFcmToken(
+    @Req() req: Request,
+    @Body() updateFcmTokenDto: UpdateFcmTokenDto,
+  ) {
+    const result = await this.userService.updateFcmToken(
+      req.user!.id,
+      updateFcmTokenDto.fcmToken,
+    );
+    return {
+      message: 'FCM token updated successfully',
       data: result,
     };
   }

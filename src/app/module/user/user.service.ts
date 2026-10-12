@@ -143,4 +143,14 @@ export class UserService {
     );
     return result;
   }
+
+  async updateFcmToken(userId: string, fcmToken: string) {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { fcmToken },
+      { new: true },
+    );
+    if (!user) throw new HttpException('User not found', 404);
+    return { fcmToken: user.fcmToken };
+  }
 }

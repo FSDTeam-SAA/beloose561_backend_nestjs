@@ -96,6 +96,9 @@ export class User {
   @Prop()
   stripeAccountId!: string;
 
+  @Prop({ trim: true })
+  fcmToken?: string;
+
   @Prop({ default: false })
   isRelailer!: boolean;
 

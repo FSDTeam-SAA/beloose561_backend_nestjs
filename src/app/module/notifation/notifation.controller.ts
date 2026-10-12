@@ -118,3 +118,82 @@ export class NotifationController {
     return { message: 'Notification deleted successfully', data: result };
   }
 }
+
+@ApiTags('notifications')
+@Controller('notifications')
+export class CustomerNotificationsController {
+  constructor(private readonly notifationService: NotifationService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get My Notifications (Customer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @HttpCode(HttpStatus.OK)
+  async getMyNotifications(@Req() req: Request) {
+    const options = pick(req.query, ['limit', 'page']);
+    const result = await this.notifationService.getCustomerNotifications(
+      req.user!.id,
+      options,
+    );
+    return {
+      message: 'Notifications retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Get('unread-count')
+  @ApiOperation({ summary: 'Get My Unread Notification Count (Customer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @HttpCode(HttpStatus.OK)
+  async getUnreadCount(@Req() req: Request) {
+    const count = await this.notifationService.getCustomerUnreadCount(
+      req.user!.id,
+    );
+    return {
+      message: 'Unread notification count retrieved successfully',
+      data: { count },
+    };
+  }
+
+  @Patch('read-all')
+  @ApiOperation({ summary: 'Mark All My Notifications As Read (Customer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @HttpCode(HttpStatus.OK)
+  async markAllAsRead(@Req() req: Request) {
+    const result = await this.notifationService.markAllCustomerAsRead(
+      req.user!.id,
+    );
+    return { message: 'Notifications marked as read', data: result };
+  }
+
+  @Patch(':id/read')
+  @ApiOperation({ summary: 'Mark My Notification As Read (Customer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @HttpCode(HttpStatus.OK)
+  async markAsRead(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.notifationService.markCustomerAsRead(
+      req.user!.id,
+      id,
+    );
+    return { message: 'Notification marked as read', data: result };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete My Notification (Customer)' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('customer'))
+  @HttpCode(HttpStatus.OK)
+  async deleteNotification(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.notifationService.deleteCustomerNotification(
+      req.user!.id,
+      id,
+    );
+    return { message: 'Notification deleted successfully', data: result };
+  }
+}

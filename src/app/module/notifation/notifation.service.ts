@@ -123,6 +123,65 @@ export class NotifationService {
     return { meta: { page, limit, total, unreadCount }, data: result };
   }
 
+  async getCustomerNotifications(userId: string, options: IOptions) {
+    const { limit, page, skip } = paginationHelper({
+      ...options,
+      limit: options.limit ?? 20,
+    });
+    const whereConditions = { recipientRole: 'customer', userId };
+
+    const [data, total] = await Promise.all([
+      this.notifationModel
+        .find(whereConditions)
+        .sort({ createdAt: 'desc' })
+        .skip(skip)
+        .limit(limit),
+      this.notifationModel.countDocuments(whereConditions),
+    ]);
+
+    return { meta: { page, limit, total }, data };
+  }
+
+  async getCustomerUnreadCount(userId: string) {
+    return this.notifationModel.countDocuments({
+      recipientRole: 'customer',
+      userId,
+      isRead: false,
+    });
+  }
+
+  async markCustomerAsRead(userId: string, id: string) {
+    const result = Types.ObjectId.isValid(id)
+      ? await this.notifationModel.findOneAndUpdate(
+          { _id: id, recipientRole: 'customer', userId },
+          { isRead: true },
+          { new: true },
+        )
+      : null;
+    if (!result) throw new HttpException('Notification not found', 404);
+    return result;
+  }
+
+  async markAllCustomerAsRead(userId: string) {
+    const result = await this.notifationModel.updateMany(
+      { recipientRole: 'customer', userId, isRead: false },
+      { isRead: true },
+    );
+    return { updated: result.modifiedCount };
+  }
+
+  async deleteCustomerNotification(userId: string, id: string) {
+    const result = Types.ObjectId.isValid(id)
+      ? await this.notifationModel.findOneAndDelete({
+          _id: id,
+          recipientRole: 'customer',
+          userId,
+        })
+      : null;
+    if (!result) throw new HttpException('Notification not found', 404);
+    return result;
+  }
+
   async markAsRead(id: string) {
     const result = await this.notifationModel.findByIdAndUpdate(
       id,
